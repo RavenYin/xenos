@@ -8,11 +8,18 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    totalCommitments: 0,
+    fulfilled: 0,
+    rate: 100,
+  });
+  const [commitments, setCommitments] = useState<any[]>([]);
 
   useEffect(() => {
     if (session) {
       fetchProfile();
       fetchApiKey();
+      fetchStats();
     }
   }, [session]);
 
@@ -52,6 +59,64 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Failed to generate API key:', error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch('/api/v1/commitments');
+      if (res.ok) {
+        const data = await res.json();
+        setCommitments(data.commitments || []);
+        
+        const total = data.commitments?.length || 0;
+        const fulfilled = data.commitments?.filter((c: any) => 
+          c.status === 'COMPLETED'
+        ).length || 0;
+        
+        setStats({
+          totalCommitments: total,
+          fulfilled: fulfilled,
+          rate: total > 0 ? Math.round((fulfilled / total) * 100) : 100,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const createTestCommitment = async () => {
+    if (!apiKey) {
+      alert('请先生成 API Key');
+      return;
+    }
+    
+    try {
+      const res = await fetch('/api/v1/commitments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          to: 'did:key:example-recipient',
+          context: 'towow-task',
+          task: '测试任务 - 完成信契 MVP 开发',
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        }),
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        alert(`承诺已创建！ID: ${data.id}`);
+        fetchStats();
+      } else {
+        const error = await res.json();
+        alert(`创建失败: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to create commitment:', error);
+      alert('创建失败，请检查网络连接');
     }
   };
 
@@ -197,24 +262,56 @@ export default function Dashboard() {
 
         {/* Trust Stats */}
         <section className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">信任数据</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">信任数据</h2>
+            <button
+              onClick={createTestCommitment}
+              disabled={!apiKey}
+              className="text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              + 创建测试承诺
+            </button>
+          </div>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">0</div>
+              <div className="text-3xl font-bold text-blue-600">{stats.totalCommitments}</div>
               <div className="text-gray-600 text-sm">已创建承诺</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">0</div>
+              <div className="text-3xl font-bold text-green-600">{stats.fulfilled}</div>
               <div className="text-gray-600 text-sm">已完成履约</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-indigo-600">100%</div>
+              <div className="text-3xl font-bold text-indigo-600">{stats.rate}%</div>
               <div className="text-gray-600 text-sm">履约率</div>
             </div>
           </div>
-          <p className="text-sm text-gray-500 mt-4">
-            * 数据将在与 ToWow 集成后实时更新
-          </p>
+          
+          {commitments.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="font-semibold text-gray-900 mb-3">最近承诺</h3>
+              <div className="space-y-3">
+                {commitments.slice(0, 3).map((c) => (
+                  <div key={c.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">{c.task}</p>
+                      <p className="text-sm text-gray-500">{c.context}</p>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-sm ${
+                      c.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                      c.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}>
+                      {c.status === 'COMPLETED' ? '已完成' :
+                       c.status === 'PENDING' ? '待处理' :
+                       c.status === 'IN_PROGRESS' ? '进行中' :
+                       c.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* ToWow Integration */}
