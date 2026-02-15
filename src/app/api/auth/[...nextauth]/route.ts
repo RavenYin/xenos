@@ -1,0 +1,8 @@
+import NextAuth from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+console.log('🔌 route.ts: authOptions.providers =', authOptions.providers);
+
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
