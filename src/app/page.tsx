@@ -8,37 +8,8 @@ export default function Home() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  // Generate random state for OAuth
-  const generateState = () => {
-    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  };
-
-  const handleSignIn = () => {
-    // Ensure we're in browser
-    if (typeof window === 'undefined') return;
-    
-    const clientId = process.env.NEXT_PUBLIC_SECONDME_CLIENT_ID || '79127965-7c40-4609-9862-15933fa9712e';
-    const redirectUri = `http://localhost:3001/api/auth/callback/secondme`;
-    const state = generateState();
-    
-    // Store state in sessionStorage for verification
-    sessionStorage.setItem('oauth_state', state);
-    
-    // Build OAuth URL
-    const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: 'code',
-      scope: 'user.info',
-      state: state,
-    });
-    
-    const authUrl = `https://go.second.me/oauth/?${params.toString()}`;
-    console.log('Redirecting to:', authUrl);
-    
-    // Direct redirect
-    window.location.href = authUrl;
-  };
+  // Build OAuth URL directly
+  const oauthUrl = `https://go.second.me/oauth/?client_id=79127965-7c40-4609-9862-15933fa9712e&redirect_uri=http://localhost:3001/api/auth/callback/secondme&response_type=code&scope=user.info`;
 
   useEffect(() => {
     if (session) {
@@ -88,12 +59,12 @@ export default function Home() {
           </p>
           
           {!session ? (
-            <button
-              onClick={handleSignIn}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-10 rounded-xl text-lg shadow-lg transition-all transform hover:scale-105"
+            <a
+              href={oauthUrl}
+              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-10 rounded-xl text-lg shadow-lg transition-all transform hover:scale-105"
             >
               使用 SecondMe 登录体验
-            </button>
+            </a>
           ) : (
             <div className="space-y-4">
               <p className="text-green-600 font-medium">✅ 已登录为 {profile?.name || '用户'}</p>
@@ -179,12 +150,12 @@ export default function Home() {
             无论是开发者还是用户，信契都为您提供简单、可信的信任解决方案。
           </p>
           {!session ? (
-            <button
-              onClick={handleSignIn}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-12 rounded-xl text-lg shadow-lg transition-all"
+            <a
+              href={oauthUrl}
+              className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-12 rounded-xl text-lg shadow-lg transition-all"
             >
               立即开始体验
-            </button>
+            </a>
           ) : (
             <div className="space-x-4">
               <button
