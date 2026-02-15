@@ -88,10 +88,12 @@ const SecondMeProvider = {
       secondMeId: profile.sub 
     };
   },
-  checks: ["state"],
+  checks: [],
   // Disable OIDC discovery
   wellKnown: undefined,
   issuer: undefined,
+  // Allow HTTP for localhost
+  allowDangerousEmailAccountLinking: true,
 };
 
 export const authOptions: NextAuthOptions = {
@@ -129,11 +131,16 @@ export const authOptions: NextAuthOptions = {
     },
     redirect: async ({ url, baseUrl }) => {
       console.log('[NextAuth] Redirect callback:', { url, baseUrl });
-      // Always redirect to dashboard after sign in
-      if (url.includes('/api/auth/callback') || url === baseUrl || url === `${baseUrl}/`) {
-        return `${baseUrl}/dashboard`;
+      // Allow redirects to same site
+      if (url.startsWith(baseUrl)) {
+        // If it's the callback URL, redirect to dashboard
+        if (url.includes('/api/auth/callback')) {
+          return `${baseUrl}/dashboard`;
+        }
+        return url;
       }
-      return url;
+      // Default to base URL
+      return baseUrl;
     },
   },
   pages: {
