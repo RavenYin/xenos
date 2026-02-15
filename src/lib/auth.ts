@@ -89,9 +89,6 @@ const SecondMeProvider = {
     };
   },
   checks: [],
-  // Disable OIDC discovery
-  wellKnown: undefined,
-  issuer: undefined,
   // Allow HTTP for localhost
   allowDangerousEmailAccountLinking: true,
 };

@@ -14,8 +14,11 @@ export default function Home() {
   };
 
   const handleSignIn = () => {
+    // Ensure we're in browser
+    if (typeof window === 'undefined') return;
+    
     const clientId = process.env.NEXT_PUBLIC_SECONDME_CLIENT_ID || '79127965-7c40-4609-9862-15933fa9712e';
-    const redirectUri = `${window.location.origin}/api/auth/callback/secondme`;
+    const redirectUri = `http://localhost:3001/api/auth/callback/secondme`;
     const state = generateState();
     
     // Store state in sessionStorage for verification
