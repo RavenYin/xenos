@@ -1,12 +1,41 @@
 'use client';
 
-import { useSession, signIn, signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 export default function Home() {
   const { data: session, status } = useSession();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  // Generate random state for OAuth
+  const generateState = () => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  };
+
+  const handleSignIn = () => {
+    const clientId = process.env.NEXT_PUBLIC_SECONDME_CLIENT_ID || '79127965-7c40-4609-9862-15933fa9712e';
+    const redirectUri = `${window.location.origin}/api/auth/callback/secondme`;
+    const state = generateState();
+    
+    // Store state in sessionStorage for verification
+    sessionStorage.setItem('oauth_state', state);
+    
+    // Build OAuth URL
+    const params = new URLSearchParams({
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'user.info',
+      state: state,
+    });
+    
+    const authUrl = `https://go.second.me/oauth/?${params.toString()}`;
+    console.log('Redirecting to:', authUrl);
+    
+    // Direct redirect
+    window.location.href = authUrl;
+  };
 
   useEffect(() => {
     if (session) {
@@ -57,7 +86,7 @@ export default function Home() {
           
           {!session ? (
             <button
-              onClick={() => signIn('secondme')}
+              onClick={handleSignIn}
               className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-10 rounded-xl text-lg shadow-lg transition-all transform hover:scale-105"
             >
               使用 SecondMe 登录体验
@@ -148,7 +177,7 @@ export default function Home() {
           </p>
           {!session ? (
             <button
-              onClick={() => signIn('secondme')}
+              onClick={handleSignIn}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-12 rounded-xl text-lg shadow-lg transition-all"
             >
               立即开始体验
