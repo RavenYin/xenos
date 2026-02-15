@@ -20,6 +20,8 @@ const SecondMeProvider = {
     params: {
       scope: "user.info",
       response_type: "code",
+      client_id: process.env.SECONDME_CLIENT_ID,
+      redirect_uri: `${process.env.NEXTAUTH_URL || 'http://localhost:3001'}/api/auth/callback/secondme`,
     },
   },
   token: {
