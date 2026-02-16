@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // appDir is enabled by default in Next.js 14
-};
+  // 基础配置
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

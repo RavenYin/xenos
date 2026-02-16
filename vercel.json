@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "env": {
+    "NEXTAUTH_URL": "@nextauth_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "SECONDME_CLIENT_ID": "@secondme_client_id",
+    "SECONDME_CLIENT_SECRET": "@secondme_client_secret",
+    "SECONDME_ENDPOINT": "@secondme_endpoint",
+    "DATABASE_URL": "@database_url"
+  }
+}

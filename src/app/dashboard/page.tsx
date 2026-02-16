@@ -1,350 +1,78 @@
-'use client';
+'use client'
 
-import { useSession, signIn, signOut } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react"
+import Link from "next/link"
 
 export default function Dashboard() {
-  const { data: session, status } = useSession();
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [stats, setStats] = useState({
-    totalCommitments: 0,
-    fulfilled: 0,
-    rate: 100,
-  });
-  const [commitments, setCommitments] = useState<any[]>([]);
+  const { data: session, status } = useSession()
 
-  useEffect(() => {
-    if (session) {
-      fetchProfile();
-      fetchApiKey();
-      fetchStats();
-    }
-  }, [session]);
-
-  const fetchProfile = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/profile');
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchApiKey = async () => {
-    try {
-      const res = await fetch('/api/user/apikey');
-      if (res.ok) {
-        const data = await res.json();
-        setApiKey(data.apiKey);
-      }
-    } catch (error) {
-      console.error('Failed to fetch API key:', error);
-    }
-  };
-
-  const generateApiKey = async () => {
-    try {
-      const res = await fetch('/api/user/apikey', { method: 'POST' });
-      if (res.ok) {
-        const data = await res.json();
-        setApiKey(data.apiKey);
-      }
-    } catch (error) {
-      console.error('Failed to generate API key:', error);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const res = await fetch('/api/v1/commitments');
-      if (res.ok) {
-        const data = await res.json();
-        setCommitments(data.commitments || []);
-        
-        const total = data.commitments?.length || 0;
-        const fulfilled = data.commitments?.filter((c: any) => 
-          c.status === 'COMPLETED'
-        ).length || 0;
-        
-        setStats({
-          totalCommitments: total,
-          fulfilled: fulfilled,
-          rate: total > 0 ? Math.round((fulfilled / total) * 100) : 100,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    }
-  };
-
-  const createTestCommitment = async () => {
-    if (!apiKey) {
-      alert('请先生成 API Key');
-      return;
-    }
-    
-    try {
-      const res = await fetch('/api/v1/commitments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          to: 'did:key:example-recipient',
-          context: 'towow-task',
-          task: '测试任务 - 完成信契 MVP 开发',
-          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-        }),
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        alert(`承诺已创建！ID: ${data.id}`);
-        fetchStats();
-      } else {
-        const error = await res.json();
-        alert(`创建失败: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Failed to create commitment:', error);
-      alert('创建失败，请检查网络连接');
-    }
-  };
-
-  if (status === 'loading') {
+  if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">加载中...</p>
         </div>
       </div>
-    );
+    )
   }
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">请先登录</h1>
-          <p className="text-gray-600 mb-6">您需要登录才能访问控制台</p>
-          <button
-            onClick={() => signIn('secondme')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg"
+          <Link
+            href="/"
+            className="text-blue-600 hover:text-blue-700 font-medium"
           >
-            登录
-          </button>
+            返回首页
+          </Link>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              信契 <span className="text-blue-600">Xenos</span>
-            </h1>
-            <span className="text-sm text-gray-500">控制台</span>
-          </div>
-          <div className="flex items-center space-x-4">
+          <h1 className="text-2xl font-bold text-gray-900">
+            信契 <span className="text-blue-600">控制台</span>
+          </h1>
+          <div className="flex items-center gap-4">
+            <span className="text-gray-600">{session.user?.name}</span>
             <button
-              onClick={() => window.location.href = '/'}
-              className="text-gray-600 hover:text-gray-900 transition-colors"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="text-red-600 hover:text-red-700 font-medium"
             >
-              返回首页
-            </button>
-            <button
-              onClick={() => signOut()}
-              className="text-red-600 hover:text-red-700 transition-colors"
-            >
-              退出登录
+              退出
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="max-w-5xl mx-auto px-4 py-10">
-        {/* Profile Section */}
-        <section className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">个人信息</h2>
-          {loading ? (
-            <p className="text-gray-500">加载中...</p>
-          ) : profile ? (
-            <div className="flex items-start space-x-6">
-              {profile.image && (
-                <img
-                  src={profile.image}
-                  alt={profile.name || '用户头像'}
-                  className="w-20 h-20 rounded-full"
-                />
-              )}
-              <div className="flex-1">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">姓名</p>
-                    <p className="text-gray-900 font-medium">{profile.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">邮箱</p>
-                    <p className="text-gray-900 font-medium">{profile.email}</p>
-                  </div>
-                  {profile.secondMeId && (
-                    <div>
-                      <p className="text-sm text-gray-500">SecondMe ID</p>
-                      <p className="text-gray-900 font-mono text-sm">{profile.secondMeId}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            个人信息
+          </h2>
+          <div className="space-y-3">
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-600">姓名</span>
+              <span className="font-medium">{session.user?.name || "-"}</span>
             </div>
-          ) : (
-            <p className="text-gray-500">暂无个人信息</p>
-          )}
-        </section>
-
-        {/* API Key Section */}
-        <section className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">ToWow 集成 API Key</h2>
-          <p className="text-gray-600 mb-4">
-            使用此 API Key 在您的 ToWow 应用或 Agent 中调用信契的信任协议 API。
-          </p>
-          
-          {apiKey ? (
-            <div className="bg-gray-100 p-4 rounded-lg border border-gray-300">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">您的 API Key</span>
-                <button
-                  onClick={() => navigator.clipboard.writeText(apiKey)}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  复制
-                </button>
-              </div>
-              <code className="text-gray-900 font-mono text-sm break-all">{apiKey}</code>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-600">邮箱</span>
+              <span className="font-medium">{session.user?.email || "-"}</span>
             </div>
-          ) : (
-            <button
-              onClick={generateApiKey}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg"
-            >
-              生成 API Key
-            </button>
-          )}
-
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h3 className="font-semibold text-gray-900 mb-3">API 使用示例</h3>
-            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm">
-{`curl -X POST https://xenos.network/api/v1/commitments \\
-  -H "Authorization: Bearer ${apiKey || 'YOUR_API_KEY'}" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "to": "did:key:example...",
-    "context": "towow-task",
-    "task": "Deploy website within 24h"
-  }'`}
-            </pre>
-          </div>
-        </section>
-
-        {/* Trust Stats */}
-        <section className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">信任数据</h2>
-            <button
-              onClick={createTestCommitment}
-              disabled={!apiKey}
-              className="text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              + 创建测试承诺
-            </button>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-600">{stats.totalCommitments}</div>
-              <div className="text-gray-600 text-sm">已创建承诺</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-600">{stats.fulfilled}</div>
-              <div className="text-gray-600 text-sm">已完成履约</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-indigo-600">{stats.rate}%</div>
-              <div className="text-gray-600 text-sm">履约率</div>
+            <div className="flex justify-between py-2 border-b">
+              <span className="text-gray-600">用户 ID</span>
+              <span className="font-mono text-sm">{session.user?.id}</span>
             </div>
           </div>
-          
-          {commitments.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-3">最近承诺</h3>
-              <div className="space-y-3">
-                {commitments.slice(0, 3).map((c) => (
-                  <div key={c.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{c.task}</p>
-                      <p className="text-sm text-gray-500">{c.context}</p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-sm ${
-                      c.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                      c.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
-                      {c.status === 'COMPLETED' ? '已完成' :
-                       c.status === 'PENDING' ? '待处理' :
-                       c.status === 'IN_PROGRESS' ? '进行中' :
-                       c.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* ToWow Integration */}
-        <section className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-xl shadow-sm p-6 text-white">
-          <h2 className="text-xl font-semibold mb-4">与 ToWow 的集成</h2>
-          <ul className="space-y-2">
-            <li className="flex items-start">
-              <span className="mr-2">✓</span>
-              <span>SecondMe 身份认证，确保participant真实可信</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">✓</span>
-              <span>任务分发时自动创建不可篡改的承诺记录</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">✓</span>
-              <span>任务完成后生成可验证的履约证明</span>
-            </li>
-            <li className="flex items-start">
-              <span className="mr-2">✓</span>
-              <span>基于历史履约记录的动态信誉评分</span>
-            </li>
-          </ul>
-          <div className="mt-6">
-            <a
-              href="/api-docs"
-              className="inline-block bg-white text-indigo-600 font-medium py-2 px-6 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              查看 API 文档
-            </a>
-          </div>
-        </section>
+        </div>
       </main>
     </div>
-  );
+  )
 }
