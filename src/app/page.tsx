@@ -59,12 +59,12 @@ export default function Home() {
           </p>
           
           {!session ? (
-            <a
-              href={oauthUrl}
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-10 rounded-xl text-lg shadow-lg transition-all transform hover:scale-105"
+            <button
+              onClick={() => window.location.href = oauthUrl}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-10 rounded-xl text-lg shadow-lg transition-all transform hover:scale-105"
             >
               使用 SecondMe 登录体验
-            </a>
+            </button>
           ) : (
             <div className="space-y-4">
               <p className="text-green-600 font-medium">✅ 已登录为 {profile?.name || '用户'}</p>
@@ -150,12 +150,12 @@ export default function Home() {
             无论是开发者还是用户，信契都为您提供简单、可信的信任解决方案。
           </p>
           {!session ? (
-            <a
-              href={oauthUrl}
-              className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-12 rounded-xl text-lg shadow-lg transition-all"
+            <button
+              onClick={() => window.location.href = oauthUrl}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 px-12 rounded-xl text-lg shadow-lg transition-all"
             >
               立即开始体验
-            </a>
+            </button>
           ) : (
             <div className="space-x-4">
               <button
