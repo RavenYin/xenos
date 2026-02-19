@@ -1,76 +1,122 @@
 'use client'
 
-import { useSession, signOut } from "next-auth/react"
-import Link from "next/link"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import UserProfile from '@/components/UserProfile'
+import ShadesList from '@/components/ShadesList'
+import SoftMemoryList from '@/components/SoftMemoryList'
+import ChatWindow from '@/components/ChatWindow'
+import NoteEditor from '@/components/NoteEditor'
+
+interface UserInfo {
+  id: string
+  name: string
+  email: string
+  avatarUrl?: string
+}
+
+type TabType = 'profile' | 'shades' | 'memory' | 'chat' | 'note'
+
+const tabs: { key: TabType; label: string }[] = [
+  { key: 'profile', label: '个人信息' },
+  { key: 'shades', label: '兴趣标签' },
+  { key: 'memory', label: '软记忆' },
+  { key: 'chat', label: '聊天' },
+  { key: 'note', label: '笔记' },
+]
 
 export default function Dashboard() {
-  const { data: session, status } = useSession()
+  const router = useRouter()
+  const [user, setUser] = useState<UserInfo | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<TabType>('profile')
 
-  if (status === "loading") {
+  useEffect(() => {
+    fetch('/api/user/info')
+      .then(res => res.json())
+      .then(result => {
+        if (result.code === 0) {
+          setUser(result.data)
+        } else {
+          router.push('/')
+        }
+      })
+      .catch(() => router.push('/'))
+      .finally(() => setLoading(false))
+  }, [router])
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' })
+    router.push('/')
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">加载中...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">加载中...</div>
       </div>
     )
   }
 
-  if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">请先登录</h1>
-          <Link
-            href="/"
-            className="text-blue-600 hover:text-blue-700 font-medium"
-          >
-            返回首页
-          </Link>
-        </div>
-      </div>
-    )
+  if (!user) {
+    return null
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            信契 <span className="text-blue-600">控制台</span>
-          </h1>
+      {/* Header */}
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-gray-600">{session.user?.name}</span>
-            <button
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-red-600 hover:text-red-700 font-medium"
+            <h1 className="text-xl font-semibold text-gray-900">Xenos</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {user.avatarUrl && (
+                <img 
+                  src={user.avatarUrl} 
+                  alt={user.name} 
+                  className="w-8 h-8 rounded-full"
+                />
+              )}
+              <span className="text-gray-700">{user.name}</span>
+            </div>
+            <button 
+              onClick={handleLogout}
+              className="btn-secondary text-sm"
             >
-              退出
+              退出登录
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-10">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            个人信息
-          </h2>
-          <div className="space-y-3">
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">姓名</span>
-              <span className="font-medium">{session.user?.name || "-"}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">邮箱</span>
-              <span className="font-medium">{session.user?.email || "-"}</span>
-            </div>
-            <div className="flex justify-between py-2 border-b">
-              <span className="text-gray-600">用户 ID</span>
-              <span className="font-mono text-sm">{session.user?.id}</span>
-            </div>
-          </div>
+      {/* Main Content */}
+      <main className="max-w-6xl mx-auto px-6 py-8">
+        {/* Tabs */}
+        <div className="flex gap-2 mb-8 border-b border-gray-200">
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === tab.key
+                  ? 'text-primary-600 border-primary-600'
+                  : 'text-gray-500 border-transparent hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="card">
+          {activeTab === 'profile' && <UserProfile user={user} />}
+          {activeTab === 'shades' && <ShadesList />}
+          {activeTab === 'memory' && <SoftMemoryList />}
+          {activeTab === 'chat' && <ChatWindow />}
+          {activeTab === 'note' && <NoteEditor />}
         </div>
       </main>
     </div>

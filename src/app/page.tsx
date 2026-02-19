@@ -1,82 +1,43 @@
-'use client'
-
-import { useSession, signIn, signOut } from "next-auth/react"
-import Link from "next/link"
+import Link from 'next/link'
 
 export default function Home() {
-  const { data: session, status } = useSession()
-
-  // 直接跳转到 SecondMe OAuth
-  const directLogin = () => {
-    const clientId = process.env.NEXT_PUBLIC_SECONDME_CLIENT_ID || '79127965-7c40-4609-9862-15933fa9712e'
-    const redirectUri = 'http://localhost:3001/api/auth/callback/secondme'
-    const authUrl = `https://go.second.me/oauth/?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=user.info`
-    window.location.href = authUrl
-  }
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">加载中...</p>
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-primary-50 to-white p-8">
+      <div className="max-w-md w-full text-center">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Xenos
+          </h1>
+          <p className="text-gray-600 text-lg">
+            集成 SecondMe OAuth 登录
+          </p>
+          <p className="text-gray-500 mt-2">
+            获取个人信息、笔记和聊天功能
+          </p>
+        </div>
+        
+        <div className="space-y-4">
+          <Link
+            href="/api/auth/login"
+            className="btn-primary inline-flex items-center justify-center w-full"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+            </svg>
+            使用 SecondMe 登录
+          </Link>
+          
+          <p className="text-sm text-gray-400">
+            登录即表示您同意我们的服务条款
+          </p>
+        </div>
+        
+        <div className="mt-12 pt-8 border-t border-gray-100">
+          <p className="text-sm text-gray-400">
+            由 SecondMe 提供认证服务
+          </p>
         </div>
       </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <header className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            信契 <span className="text-blue-600">Xenos</span>
-          </h1>
-          <p className="text-xl text-gray-700 mb-4">
-            链接信任与履约的去中心化协议
-          </p>
-          <p className="text-lg text-gray-600 mb-10">
-            基于 SecondMe 身份认证，为 ToWow 生态提供不可篡改的信任基础设施
-          </p>
-
-          {!session ? (
-            <div className="space-y-4">
-              <button
-                onClick={() => signIn("secondme", { callbackUrl: "/dashboard" })}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-10 rounded-xl text-lg shadow-lg transition-all block w-full max-w-md mx-auto"
-              >
-                使用 SecondMe 登录 (NextAuth)
-              </button>
-              
-              <button
-                onClick={directLogin}
-                className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-xl text-base shadow-lg transition-all block w-full max-w-md mx-auto"
-              >
-                直接跳转 SecondMe (备选)
-              </button>
-
-              <a 
-                href="/api/debug-callback"
-                className="text-blue-600 hover:underline text-sm block mt-4"
-              >
-                测试回调接口
-              </a>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-green-600 font-medium">
-                欢迎，{session.user?.name || "用户"}
-              </p>
-              <Link
-                href="/dashboard"
-                className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg shadow transition-colors"
-              >
-                进入控制台
-              </Link>
-            </div>
-          )}
-        </div>
-      </header>
-    </div>
+    </main>
   )
 }

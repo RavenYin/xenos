@@ -1,13 +1,16 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Noto_Sans_SC } from 'next/font/google'
 import './globals.css'
-import { Providers } from '@/components/Providers'
 
-const inter = Inter({ subsets: ['latin'] })
+const notoSans = Noto_Sans_SC({ 
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+})
 
 export const metadata: Metadata = {
-  title: '信契 - 信任协议',
-  description: '链接 SecondMe 和 ToWow 的信任协议应用',
+  title: 'Xenos - SecondMe OAuth 集成',
+  description: '集成 SecondMe OAuth 登录和个人信息获取的网站应用',
 }
 
 export default function RootLayout({
@@ -16,9 +19,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh">
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
+    <html lang="zh-CN">
+      <body className={`${notoSans.variable} font-sans antialiased`}>
+        {children}
       </body>
     </html>
   )
