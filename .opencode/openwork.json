@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "workspace": {
+    "name": "Xenos",
+    "createdAt": 1771459531629,
+    "preset": "starter"
+  },
+  "authorizedRoots": [
+    "E:\\VScode\\Xenos"
+  ]
+}
