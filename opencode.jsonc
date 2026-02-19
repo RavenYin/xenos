@@ -18,10 +18,23 @@
         "@mauricio.wolff/mcp-obsidian@latest",
         "E:/Obsidian"
       ]
+    },
+    "context7": {
+      "type": "remote",
+      "enabled": true,
+      "url": "https://mcp.context7.com/mcp"
+    },
+    "z-ai": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "npx",
+        "-y@z_ai/coding-helper"
+      ]
     }
   },
   "plugin": [
     "opencode-scheduler"
   ],
-  "model": "zhipuai-coding-plan/glm-4.5-flash"
+  "model": "opencode/glm-5-free"
 }

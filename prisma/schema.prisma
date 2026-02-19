@@ -12,6 +12,7 @@ datasource db {
 
 model User {
   id                String    @id @default(cuid())
+  did               String?   @unique // did:key 去中心化身份
   secondmeUserId    String    @unique @map("secondme_user_id")
   email             String?
   name              String?
@@ -24,6 +25,10 @@ model User {
 
   sessions          Session[]
   notes             Note[]
+  commitments       Commitment[] @relation("Promises")
+  receivedCommitments Commitment[] @relation("Receives")
+  givenAttestations  Attestation[] @relation("AttestationGiver") // 发出的证明
+  receivedAttestations Attestation[] @relation("AttestationReceiver") // 收到的证明
 
   @@map("users")
 }
@@ -51,4 +56,81 @@ model Note {
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notes")
+}
+
+// VCA 可验证承诺证明模型
+model Commitment {
+  id            String    @id @default(cuid())
+  promiserId    String    @map("promiser_id")   // 承诺者用户ID
+  receiverId    String?   @map("receiver_id")   // 接收者用户ID（可选）
+  context       String    // 上下文标签，如 "towow-agent"
+  task          String    // 任务描述
+  deadline      DateTime? // 截止时间
+  status        String   @default("PENDING") // PENDING, FULFILLED, FAILED, CANCELLED
+  evidence      String?   // 履约证据链接
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  // VC 相关字段（可选，MVP阶段先不使用）
+  vcId          String?   @unique // VC 的唯一标识
+  vcJwt         String?   // VC 的 JWT 形式
+  signedAt      DateTime? // 签名时间
+  promiserDid   String?   @unique // did:key
+  receiverDid   String?   // did:key
+  
+  promiser      User      @relation("Promises", fields: [promiserId], references: [id])
+  receiver      User?     @relation("Receives", fields: [receiverId], references: [id])
+  attestations  Attestation[]
+  
+  @@index([promiserId, context])
+  @@index([status])
+  @@map("commitments")
+}
+
+// CommitmentStatus 使用 String 代替 enum
+// PENDING     - 待履行
+// FULFILLED   - 已完成  
+// FAILED      - 失败
+// CANCELLED   - 已取消
+
+// 履约证明模型（替换原有的 Attestation）
+model Attestation {
+  id            String    @id @default(cuid())
+  commitmentId  String    @map("commitment_id")
+  attesterId    String    @map("attester_id")   // 证明者
+  receiverId    String?   @map("receiver_id")   // 接收者证明
+  fulfilled     Boolean  // 是否履约
+  evidence      String?   // 证明证据
+  comment       String?   // 备注
+  
+  // VC 相关字段
+  vcId          String?   @unique
+  vcJwt         String?
+  signedAt      DateTime?
+  
+  createdAt     DateTime  @default(now()) @map("created_at")
+  
+  commitment    Commitment @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+  attester      User       @relation("AttestationGiver", fields: [attesterId], references: [id])
+  receiver      User?      @relation("AttestationReceiver", fields: [receiverId], references: [id])
+  
+  @@index([commitmentId])
+  @@index([attesterId])
+  @@map("attestations")
+}
+
+// 审计日志模型
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String   // 操作类型：create_commitment, fulfill_commitment, create_attestation, update_reputation, etc.
+  actorId     String   @map("actor_id")     // 操作者
+  targetType  String   @map("target_type")  // 目标类型：commitment, attestation, user, reputation
+  targetId    String   @map("target_id")    // 目标对象ID
+  payload     String   // 操作详情（JSON格式字符串）
+  timestamp   DateTime @default(now()) @map("timestamp")
+  
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([timestamp])
+  @@map("audit_logs")
 }
