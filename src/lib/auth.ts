@@ -1,136 +1,161 @@
-import { NextAuthOptions } from "next-auth"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/prisma"
+import { prisma } from './prisma'
 
-const SECONDME_ENDPOINT = process.env.SECONDME_ENDPOINT || 'https://app.mindos.com/gate/lab'
-const NEXTAUTH_URL = process.env.NEXTAUTH_URL || 'http://localhost:3001'
+const API_BASE_URL = process.env.SECONDME_API_BASE_URL || 'https://app.mindos.com/gate/lab'
+const OAUTH_URL = process.env.SECONDME_OAUTH_URL || 'https://go.second.me/oauth/'
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
-  providers: [
-    {
-      id: "secondme",
-      name: "SecondMe",
-      type: "oauth",
-      version: "2.0",
-      authorization: {
-        url: "https://go.second.me/oauth/",
-        params: {
-          scope: "user.info",
-          response_type: "code",
-        }
-      },
-      token: {
-        url: `${SECONDME_ENDPOINT}/api/oauth/token/code`,
-        async request(context) {
-          console.log('[SecondMe Token] Starting token exchange...')
-          console.log('[SecondMe Token] Code:', context.params.code?.substring(0, 20) + '...')
-          
-          try {
-            const response = await fetch(`${SECONDME_ENDPOINT}/api/oauth/token/code`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-              body: new URLSearchParams({
-                grant_type: 'authorization_code',
-                code: context.params.code,
-                redirect_uri: `${NEXTAUTH_URL}/api/auth/callback/secondme`,
-                client_id: process.env.SECONDME_CLIENT_ID!,
-                client_secret: process.env.SECONDME_CLIENT_SECRET!,
-              }),
-            })
+export interface TokenResponse {
+  accessToken: string
+  refreshToken: string
+  tokenType: string
+  expiresIn: number
+  scope: string[]
+}
 
-            const result = await response.json()
-            console.log('[SecondMe Token] Response code:', result.code)
-            console.log('[SecondMe Token] Response message:', result.message)
-            
-            if (result.code !== 0 || !result.data) {
-              console.error('[SecondMe Token] Failed:', result.message)
-              throw new Error(result.message || 'Token exchange failed')
-            }
+export interface UserInfo {
+  id?: string
+  userId?: string
+  user_id?: string
+  sub?: string
+  uid?: string
+  userIdStr?: string
+  openid?: string
+  email?: string
+  name?: string
+  avatarUrl?: string
+  route?: string
+}
 
-            const { accessToken, refreshToken, expiresIn, tokenType } = result.data
-            console.log('[SecondMe Token] Success! Got access token.')
-            
-            return {
-              tokens: {
-                access_token: accessToken,
-                refresh_token: refreshToken,
-                expires_in: expiresIn,
-                token_type: tokenType || 'Bearer',
-              },
-            }
-          } catch (error: any) {
-            console.error('[SecondMe Token] Error:', error.message)
-            throw error
-          }
-        },
-      },
-      userinfo: {
-        url: `${SECONDME_ENDPOINT}/api/secondme/user/info`,
-        async request(context) {
-          console.log('[SecondMe UserInfo] Fetching user info...')
-          
-          try {
-            const response = await fetch(`${SECONDME_ENDPOINT}/api/secondme/user/info`, {
-              headers: { Authorization: `Bearer ${context.tokens.access_token}` },
-            })
-
-            const result = await response.json()
-            console.log('[SecondMe UserInfo] Response code:', result.code)
-
-            if (result.code !== 0 || !result.data) {
-              console.error('[SecondMe UserInfo] Failed:', result.message)
-              throw new Error(result.message || 'Failed to fetch user info')
-            }
-
-            console.log('[SecondMe UserInfo] Success! User:', result.data.name)
-            return result.data
-          } catch (error: any) {
-            console.error('[SecondMe UserInfo] Error:', error.message)
-            throw error
-          }
-        },
-      },
-      profile(profile) {
-        console.log('[SecondMe Profile] Profile data:', {
-          sub: profile.sub,
-          name: profile.name,
-          email: profile.email,
-        })
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-          secondMeId: profile.sub,
-        }
-      },
-      // 禁用 state 检查，因为 SecondMe 可能不返回 state
-      checks: [],
-      clientId: process.env.SECONDME_CLIENT_ID,
-      clientSecret: process.env.SECONDME_CLIENT_SECRET,
-    } as any,
-  ],
-  callbacks: {
-    async session({ session, user }) {
-      if (user) {
-        session.user.id = user.id
-      }
-      return session
+// 获取用户信息
+export async function getUserInfo(accessToken: string): Promise<UserInfo> {
+  const response = await fetch(`${API_BASE_URL}/api/secondme/user/info`, {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
     },
-    async redirect({ url, baseUrl }) {
-      // 允许返回到 dashboard
-      if (url.startsWith(baseUrl)) {
-        return url
-      }
-      return baseUrl
+  })
+
+  const result = await response.json()
+  
+  if (result.code !== 0 || !result.data) {
+    throw new Error(`Get user info failed: ${result.message || 'Unknown error'}`)
+  }
+
+  // 字段映射：SecondMe API 返回 userId/avatar，我们需要 id/avatarUrl
+  const data = result.data
+  return {
+    id: data.userId,
+    email: data.email,
+    name: data.name,
+    avatarUrl: data.avatar,
+    route: data.route,
+  }
+}
+
+// 生成随机 state
+export function generateState(): string {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+}
+
+// 构建授权 URL
+export function buildAuthUrl(state: string): string {
+  const params = new URLSearchParams({
+    client_id: process.env.SECONDME_CLIENT_ID!,
+    redirect_uri: process.env.SECONDME_REDIRECT_URI!,
+    response_type: 'code',
+    state: state,
+    scope: 'user.info user.info.shades user.info.softmemory note.add chat',
+  })
+  
+  return `${OAUTH_URL}?${params.toString()}`
+}
+
+// 用授权码换取 Token
+export async function exchangeCodeForToken(code: string): Promise<TokenResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/oauth/token/code`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-  },
-  pages: {
-    signIn: '/',
-    error: '/auth/error',
-  },
-  session: {
-    strategy: 'database',
-  },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: code,
+      redirect_uri: process.env.SECONDME_REDIRECT_URI!,
+      client_id: process.env.SECONDME_CLIENT_ID!,
+      client_secret: process.env.SECONDME_CLIENT_SECRET!,
+    }),
+  })
+
+  const result = await response.json()
+  
+  if (result.code !== 0 || !result.data) {
+    throw new Error(`Token exchange failed: ${result.message || 'Unknown error'}`)
+  }
+
+  return {
+    accessToken: result.data.accessToken,
+    refreshToken: result.data.refreshToken,
+    tokenType: result.data.tokenType,
+    expiresIn: result.data.expiresIn,
+    scope: result.data.scope,
+  }
+}
+
+// 刷新 Token
+export async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/oauth/token/refresh`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: process.env.SECONDME_CLIENT_ID!,
+      client_secret: process.env.SECONDME_CLIENT_SECRET!,
+    }),
+  })
+
+  const result = await response.json()
+  
+  if (result.code !== 0 || !result.data) {
+    throw new Error(`Token refresh failed: ${result.message || 'Unknown error'}`)
+  }
+
+  return {
+    accessToken: result.data.accessToken,
+    refreshToken: result.data.refreshToken,
+    tokenType: result.data.tokenType,
+    expiresIn: result.data.expiresIn,
+    scope: result.data.scope,
+  }
+}
+
+// 获取有效的 access token（自动刷新）
+export async function getValidAccessToken(userId: string): Promise<string> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  })
+
+  if (!user) {
+    throw new Error('User not found')
+  }
+
+  // 检查 token 是否过期
+  if (new Date() >= user.tokenExpiresAt) {
+    // 刷新 token
+    const newTokens = await refreshAccessToken(user.refreshToken)
+    
+    // 更新数据库
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        accessToken: newTokens.accessToken,
+        refreshToken: newTokens.refreshToken,
+        tokenExpiresAt: new Date(Date.now() + newTokens.expiresIn * 1000),
+      },
+    })
+
+    return newTokens.accessToken
+  }
+
+  return user.accessToken
 }
