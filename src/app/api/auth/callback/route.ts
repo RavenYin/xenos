@@ -29,10 +29,10 @@ export async function GET(request: NextRequest) {
     let userIdentifier, userIdentifierField;
     
     // 首先尝试使用标准ID字段
-    const standardIdFields = ['id', 'userId', 'sub', 'uid', 'userIdStr', 'openid'];
+    const standardIdFields = ['id', 'userId', 'sub', 'uid', 'userIdStr', 'openid'] as const;
     for (const field of standardIdFields) {
-      if (userInfo[field]) {
-        userIdentifier = userInfo[field];
+      if ((userInfo as any)[field]) {
+        userIdentifier = (userInfo as any)[field];
         userIdentifierField = field;
         break;
       }
@@ -40,10 +40,10 @@ export async function GET(request: NextRequest) {
     
     // 如果没有标准ID字段，使用email作为标识
     if (!userIdentifier) {
-      if (!userInfo.email) {
+      if (!(userInfo as any).email) {
         throw new Error(`用户信息中既没有ID字段也没有email字段: ${JSON.stringify(userInfo, null, 2)}`)
       }
-      userIdentifier = userInfo.email;
+      userIdentifier = (userInfo as any).email;
       userIdentifierField = 'email';
       console.log('⚠️ 警告: 使用email作为用户标识，建议联系SecondMe确认正确的用户ID字段');
     }
