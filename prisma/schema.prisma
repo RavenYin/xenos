@@ -1,57 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  secondMeId    String?   @unique
-  accessToken   String?
-  refreshToken  String?
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
+  id                String    @id @default(cuid())
+  secondmeUserId    String    @unique @map("secondme_user_id")
+  email             String?
+  name              String?
+  avatarUrl         String?   @map("avatar_url")
+  accessToken       String    @map("access_token")
+  refreshToken      String    @map("refresh_token")
+  tokenExpiresAt    DateTime  @map("token_expires_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions          Session[]
+  notes             Note[]
 
-  @@unique([provider, providerAccountId])
+  @@map("users")
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  sessionId    String    @unique @map("session_id")
+  title        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+model Note {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  noteId       Int?      @map("note_id")
+  content      String
+  createdAt    DateTime  @default(now()) @map("created_at")
 
-  @@unique([identifier, token])
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
 }
