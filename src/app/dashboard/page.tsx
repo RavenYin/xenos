@@ -3,10 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import UserProfile from '@/components/UserProfile'
-import ShadesList from '@/components/ShadesList'
-import SoftMemoryList from '@/components/SoftMemoryList'
-import ChatWindow from '@/components/ChatWindow'
-import NoteEditor from '@/components/NoteEditor'
 import CommitmentList from '@/components/CommitmentList'
 import CommitmentForm from '@/components/CommitmentForm'
 import ReputationDisplay from '@/components/ReputationDisplay'
@@ -18,16 +14,12 @@ interface UserInfo {
   avatarUrl?: string
 }
 
-type TabType = 'profile' | 'shades' | 'memory' | 'chat' | 'note' | 'commitment' | 'reputation'
+type TabType = 'profile' | 'commitment' | 'reputation'
 
 const tabs: { key: TabType; label: string }[] = [
   { key: 'profile', label: '个人信息' },
   { key: 'commitment', label: '承诺' },
   { key: 'reputation', label: '信誉' },
-  { key: 'shades', label: '兴趣标签' },
-  { key: 'memory', label: '软记忆' },
-  { key: 'chat', label: '聊天' },
-  { key: 'note', label: '笔记' },
 ]
 
 export default function Dashboard() {
@@ -128,10 +120,6 @@ export default function Dashboard() {
             </div>
           )}
           {activeTab === 'reputation' && <ReputationDisplay />}
-          {activeTab === 'shades' && <ShadesList />}
-          {activeTab === 'memory' && <SoftMemoryList />}
-          {activeTab === 'chat' && <ChatWindow />}
-          {activeTab === 'note' && <NoteEditor />}
         </div>
       </main>
     </div>
