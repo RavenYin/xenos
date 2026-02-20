@@ -93,11 +93,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '上下文和任务描述不能为空' }, { status: 400 })
     }
 
-    // 创建承诺（委托方发起，状态为 PENDING_ACCEPT）
+    // 创建承诺（委托方发起）
+    // receiverId 传入的是指定的承诺方ID（如果有）
+    // 当前用户是委托方，存储在 receiverId 字段（反向命名，需要修正 schema）
+    // 临时方案：promiserId = 指定的承诺方（可以为空表示公开）
+    //           receiverId 的实际含义需要重新理解
+    
+    // 正确的语义：
+    // - promiserId: 承诺方（接任务的人）- 可空表示待接受
+    // - receiverId: 委托方（发任务的人）- 当前用户
+    
+    // 但当前 schema 中 promiserId 是必填的，所以暂时用指定用户或创建占位用户
+    
+    let promiserId = receiverId // 如果指定了承诺方
+    
+    if (!promiserId) {
+      // 没有指定承诺方，创建一个"待接受"占位
+      // 查找或创建 "open" 用户作为占位
+      let openUser = await prisma.user.findFirst({
+        where: { secondmeUserId: 'open_for_acceptance' }
+      })
+      
+      if (!openUser) {
+        openUser = await prisma.user.create({
+          data: {
+            secondmeUserId: 'open_for_acceptance',
+            name: '待接受',
+            accessToken: `open_${Date.now()}`,
+            refreshToken: `open_refresh_${Date.now()}`,
+            tokenExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          }
+        })
+      }
+      promiserId = openUser.id
+    }
+
     const commitment = await prisma.commitment.create({
       data: {
-        promiserId: userId,  // 暂时用当前用户作为承诺方（后续支持选择）
-        receiverId,
+        promiserId,  // 承诺方（指定的或占位）
+        receiverId: userId,  // 委托方 = 当前用户
         context,
         task,
         deadline: deadline ? new Date(deadline) : null,
@@ -108,9 +142,9 @@ export async function POST(request: NextRequest) {
         promiser: {
           select: { id: true, name: true, avatarUrl: true }
         },
-        receiver: receiverId ? {
+        receiver: {
           select: { id: true, name: true, avatarUrl: true }
-        } : false
+        }
       }
     })
 
@@ -125,7 +159,7 @@ export async function POST(request: NextRequest) {
           context,
           task,
           deadline,
-          receiverId
+          assignedPromiserId: receiverId
         })
       }
     })

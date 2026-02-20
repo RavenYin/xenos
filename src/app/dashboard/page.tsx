@@ -14,12 +14,13 @@ interface UserInfo {
   avatarUrl?: string
 }
 
-type TabType = 'profile' | 'my-delegations' | 'my-promises' | 'reputation'
+type TabType = 'profile' | 'my-delegations' | 'my-promises' | 'towow' | 'reputation'
 
 const tabs: { key: TabType; label: string; description: string }[] = [
   { key: 'profile', label: '个人信息', description: '' },
   { key: 'my-delegations', label: '我的委托', description: '我发布的任务（ToWow、手动等）' },
   { key: 'my-promises', label: '接受的承诺', description: '我接受的任务承诺' },
+  { key: 'towow', label: 'ToWow', description: 'ToWow 任务市场' },
   { key: 'reputation', label: '信誉', description: '' },
 ]
 
