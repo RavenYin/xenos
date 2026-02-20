@@ -114,7 +114,9 @@ export default function ReputationDisplay() {
             <div className="text-sm text-gray-500">已失败</div>
           </div>
           <div className="p-3 bg-primary-50 rounded-lg">
-            <div className="text-2xl font-semibold text-primary-600">{data.overall.overallRate.toFixed(1)}%</div>
+            <div className="text-2xl font-semibold text-primary-600">
+              {data.overall.overallRate != null ? data.overall.overallRate.toFixed(1) : '0.0'}%
+            </div>
             <div className="text-sm text-gray-500">履约率</div>
           </div>
         </div>
