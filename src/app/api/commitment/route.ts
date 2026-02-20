@@ -104,12 +104,12 @@ export async function POST(request: NextRequest) {
         actorId: userId,
         targetType: 'commitment',
         targetId: commitment.id,
-        payload: {
+        payload: JSON.stringify({
           context,
           task,
           deadline,
           receiverId
-        }
+        })
       }
     })
 

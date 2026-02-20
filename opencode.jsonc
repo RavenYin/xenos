@@ -36,5 +36,5 @@
   "plugin": [
     "opencode-scheduler"
   ],
-  "model": "opencode/glm-5-free"
+  "model": "zhipuai-coding-plan/glm-4.7"
 }

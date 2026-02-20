@@ -7,6 +7,9 @@ import ShadesList from '@/components/ShadesList'
 import SoftMemoryList from '@/components/SoftMemoryList'
 import ChatWindow from '@/components/ChatWindow'
 import NoteEditor from '@/components/NoteEditor'
+import CommitmentList from '@/components/CommitmentList'
+import CommitmentForm from '@/components/CommitmentForm'
+import ReputationDisplay from '@/components/ReputationDisplay'
 
 interface UserInfo {
   id: string
@@ -15,10 +18,12 @@ interface UserInfo {
   avatarUrl?: string
 }
 
-type TabType = 'profile' | 'shades' | 'memory' | 'chat' | 'note'
+type TabType = 'profile' | 'shades' | 'memory' | 'chat' | 'note' | 'commitment' | 'reputation'
 
 const tabs: { key: TabType; label: string }[] = [
   { key: 'profile', label: '个人信息' },
+  { key: 'commitment', label: '承诺' },
+  { key: 'reputation', label: '信誉' },
   { key: 'shades', label: '兴趣标签' },
   { key: 'memory', label: '软记忆' },
   { key: 'chat', label: '聊天' },
@@ -113,6 +118,16 @@ export default function Dashboard() {
         {/* Tab Content */}
         <div className="card">
           {activeTab === 'profile' && <UserProfile user={user} />}
+          {activeTab === 'commitment' && (
+            <div className="space-y-6">
+              <CommitmentForm onSuccess={() => window.location.reload()} />
+              <div className="border-t pt-6">
+                <h3 className="text-lg font-medium mb-4">我的承诺</h3>
+                <CommitmentList />
+              </div>
+            </div>
+          )}
+          {activeTab === 'reputation' && <ReputationDisplay />}
           {activeTab === 'shades' && <ShadesList />}
           {activeTab === 'memory' && <SoftMemoryList />}
           {activeTab === 'chat' && <ChatWindow />}
