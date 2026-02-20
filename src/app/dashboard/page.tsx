@@ -14,12 +14,12 @@ interface UserInfo {
   avatarUrl?: string
 }
 
-type TabType = 'profile' | 'my-promises' | 'delegated' | 'reputation'
+type TabType = 'profile' | 'my-delegations' | 'my-promises' | 'reputation'
 
 const tabs: { key: TabType; label: string; description: string }[] = [
   { key: 'profile', label: '个人信息', description: '' },
-  { key: 'my-promises', label: '我承诺的', description: '我向别人承诺的任务' },
-  { key: 'delegated', label: '委托我的', description: '别人承诺帮我完成的任务' },
+  { key: 'my-delegations', label: '我的委托', description: '我发布的任务（ToWow、手动等）' },
+  { key: 'my-promises', label: '接受的承诺', description: '我接受的任务承诺' },
   { key: 'reputation', label: '信誉', description: '' },
 ]
 
@@ -113,26 +113,26 @@ export default function Dashboard() {
         <div className="card">
           {activeTab === 'profile' && <UserProfile user={user} />}
           
-          {activeTab === 'my-promises' && (
+          {activeTab === 'my-delegations' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium mb-1">我承诺的</h3>
-                <p className="text-sm text-gray-500 mb-4">我向别人承诺要完成的任务</p>
+                <h3 className="text-lg font-medium mb-1">我的委托</h3>
+                <p className="text-sm text-gray-500 mb-4">我发布的任务，可从多个渠道发布（ToWow、手动等）</p>
               </div>
               <CommitmentForm onSuccess={() => window.location.reload()} />
               <div className="border-t pt-6">
-                <CommitmentList view="promiser" />
+                <CommitmentList view="delegator" />
               </div>
             </div>
           )}
           
-          {activeTab === 'delegated' && (
+          {activeTab === 'my-promises' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium mb-1">委托我的</h3>
-                <p className="text-sm text-gray-500 mb-4">别人承诺帮我完成的任务</p>
+                <h3 className="text-lg font-medium mb-1">接受的承诺</h3>
+                <p className="text-sm text-gray-500 mb-4">我接受的任务承诺</p>
               </div>
-              <CommitmentList view="delegator" />
+              <CommitmentList view="promiser" />
             </div>
           )}
           
