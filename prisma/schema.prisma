@@ -63,7 +63,7 @@ model Commitment {
   id            String    @id @default(cuid())
   promiserId    String    @map("promiser_id")   // 承诺者用户ID
   receiverId    String?   @map("receiver_id")   // 接收者用户ID（可选）
-  context       String    // 上下文标签，如 "towow-agent"
+  context       String    // 上下文标签，如 "towow"
   task          String    // 任务描述
   deadline      DateTime? // 截止时间
   status        String   @default("PENDING") // PENDING, FULFILLED, FAILED, CANCELLED
@@ -71,11 +71,17 @@ model Commitment {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   
+  // ToWow 集成字段
+  source        String    @default("manual") @map("source") // manual, towow
+  towowTaskId   String?   @map("towow_task_id")  // ToWow 任务 ID
+  rewardAmount  Float?    @map("reward_amount")  // 报酬金额
+  rewardCurrency String?  @map("reward_currency") // 货币类型 CNY/USD
+  
   // VC 相关字段（可选，MVP阶段先不使用）
   vcId          String?   @unique // VC 的唯一标识
   vcJwt         String?   // VC 的 JWT 形式
   signedAt      DateTime? // 签名时间
-  promiserDid   String?   @unique // did:key
+  promiserDid   String?   // did:key
   receiverDid   String?   // did:key
   
   promiser      User      @relation("Promises", fields: [promiserId], references: [id])
@@ -84,6 +90,7 @@ model Commitment {
   
   @@index([promiserId, context])
   @@index([status])
+  @@index([towowTaskId])
   @@map("commitments")
 }
 
