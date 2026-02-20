@@ -159,7 +159,7 @@ export class TowowClient {
   verifyWebhookSignature(payload: string, signature: string): boolean {
     // TODO: 实现 HMAC 签名验证
     // 目前 MVP 阶段先简单检查
-    return signature && signature.length > 0
+    return !!(signature && signature.length > 0)
   }
 
   private getHeaders(): HeadersInit {

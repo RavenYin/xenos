@@ -95,10 +95,13 @@ model Commitment {
 }
 
 // CommitmentStatus 使用 String 代替 enum
-// PENDING     - 待履行
-// FULFILLED   - 已完成  
-// FAILED      - 失败
-// CANCELLED   - 已取消
+// PENDING_ACCEPT - 待承诺方确认（委托方发起后）
+// ACCEPTED       - 承诺方已接受，等待履约
+// REJECTED       - 承诺方已拒绝
+// PENDING        - 履约中（旧状态，兼容）
+// FULFILLED      - 已完成（委托方验收通过）
+// FAILED         - 失败（委托方验收不通过）
+// CANCELLED      - 已取消
 
 // 履约证明模型（替换原有的 Attestation）
 model Attestation {

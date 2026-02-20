@@ -1,3 +1,10 @@
+/**
+ * 内部承诺 API（供 SecondMe 前端使用）
+ * 
+ * GET  /api/commitment - 获取承诺列表
+ * POST /api/commitment - 创建承诺
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
@@ -12,12 +19,20 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const context = searchParams.get('context')
+    const view = searchParams.get('view') || 'promiser' // promiser | delegator
     const limit = parseInt(searchParams.get('limit') || '20')
     const offset = parseInt(searchParams.get('offset') || '0')
 
+    // 根据 view 决定查询条件
     const where: any = {}
     if (status) where.status = status
     if (context) where.context = context
+    
+    if (view === 'promiser') {
+      where.promiserId = userId
+    } else if (view === 'delegator') {
+      where.receiverId = userId
+    }
 
     const [commitments, totalCount] = await Promise.all([
       prisma.commitment.findMany({
@@ -78,14 +93,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '上下文和任务描述不能为空' }, { status: 400 })
     }
 
-    // 创建承诺
+    // 创建承诺（委托方发起，状态为 PENDING_ACCEPT）
     const commitment = await prisma.commitment.create({
       data: {
-        promiserId: userId,
+        promiserId: userId,  // 暂时用当前用户作为承诺方（后续支持选择）
         receiverId,
         context,
         task,
         deadline: deadline ? new Date(deadline) : null,
+        status: 'PENDING_ACCEPT',
+        source: 'manual'
       },
       include: {
         promiser: {

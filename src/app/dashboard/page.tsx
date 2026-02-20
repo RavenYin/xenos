@@ -14,12 +14,13 @@ interface UserInfo {
   avatarUrl?: string
 }
 
-type TabType = 'profile' | 'commitment' | 'reputation'
+type TabType = 'profile' | 'my-promises' | 'delegated' | 'reputation'
 
-const tabs: { key: TabType; label: string }[] = [
-  { key: 'profile', label: '个人信息' },
-  { key: 'commitment', label: '承诺' },
-  { key: 'reputation', label: '信誉' },
+const tabs: { key: TabType; label: string; description: string }[] = [
+  { key: 'profile', label: '个人信息', description: '' },
+  { key: 'my-promises', label: '我承诺的', description: '我向别人承诺的任务' },
+  { key: 'delegated', label: '委托我的', description: '别人承诺帮我完成的任务' },
+  { key: 'reputation', label: '信誉', description: '' },
 ]
 
 export default function Dashboard() {
@@ -66,6 +67,7 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-gray-900">Xenos</h1>
+            <span className="text-sm text-gray-500">可验证承诺证明</span>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
@@ -110,15 +112,30 @@ export default function Dashboard() {
         {/* Tab Content */}
         <div className="card">
           {activeTab === 'profile' && <UserProfile user={user} />}
-          {activeTab === 'commitment' && (
+          
+          {activeTab === 'my-promises' && (
             <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-1">我承诺的</h3>
+                <p className="text-sm text-gray-500 mb-4">我向别人承诺要完成的任务</p>
+              </div>
               <CommitmentForm onSuccess={() => window.location.reload()} />
               <div className="border-t pt-6">
-                <h3 className="text-lg font-medium mb-4">我的承诺</h3>
-                <CommitmentList />
+                <CommitmentList view="promiser" />
               </div>
             </div>
           )}
+          
+          {activeTab === 'delegated' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-1">委托我的</h3>
+                <p className="text-sm text-gray-500 mb-4">别人承诺帮我完成的任务</p>
+              </div>
+              <CommitmentList view="delegator" />
+            </div>
+          )}
+          
           {activeTab === 'reputation' && <ReputationDisplay />}
         </div>
       </main>

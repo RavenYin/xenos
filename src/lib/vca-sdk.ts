@@ -3,9 +3,14 @@
  * 可验证承诺证明 SDK - 供外部应用调用
  * 
  * 术语说明：
- * - 执行方 (executor): 承诺完成任务的人
- * - 委托方 (delegator): 委托任务、等待完成的人
- * - 验收方 (verifier): 验收承诺是否完成的人（通常是委托方）
+ * - 承诺方 (promiser): 承诺完成任务的人（接任务）
+ * - 委托方 (delegator): 发布任务、等待完成的人（发任务）
+ * 
+ * 流程：
+ * 1. 委托方 发起承诺请求 → PENDING_ACCEPT
+ * 2. 承诺方 接受 → ACCEPTED（开始履约）
+ * 3. 承诺方 履约完成 → 提交履约
+ * 4. 委托方 验收 → FULFILLED/FAILED
  * 
  * 使用方式：
  * 1. REST API: POST https://xenos.io/api/v1/commitment
@@ -17,11 +22,23 @@ import { prisma } from '@/lib/prisma'
 // ============ 类型定义 ============
 
 /**
- * 创建承诺参数
+ * 承诺状态
+ */
+export type CommitmentStatus = 
+  | 'PENDING_ACCEPT'  // 待承诺方确认
+  | 'ACCEPTED'        // 已接受，履约中
+  | 'REJECTED'        // 已拒绝
+  | 'PENDING'         // 履约中（旧状态，兼容）
+  | 'FULFILLED'       // 已完成
+  | 'FAILED'          // 失败
+  | 'CANCELLED'       // 已取消
+
+/**
+ * 创建承诺参数（委托方发起）
  */
 export interface CreateCommitmentParams {
-  executorId: string       // 执行方 ID（承诺完成任务的人）
-  delegatorId?: string     // 委托方 ID（委托任务的人）
+  promiserId: string       // 承诺方 ID（接任务的人）
+  delegatorId: string      // 委托方 ID（发任务的人）
   task: string             // 承诺内容
   deadline?: string        // 截止时间 ISO 格式
   context?: string         // 来源上下文，如 "towow", "secondme", "manual"
@@ -34,23 +51,24 @@ export interface CreateCommitmentParams {
  */
 export interface CommitmentResult {
   id: string
-  executorId: string       // 执行方
-  delegatorId?: string     // 委托方
+  promiserId: string       // 承诺方
+  delegatorId: string      // 委托方
   task: string
-  status: 'PENDING' | 'FULFILLED' | 'FAILED' | 'CANCELLED'
+  status: CommitmentStatus
   deadline?: string
   context: string
   source: string
   externalId?: string
   createdAt: string
+  updatedAt: string
 }
 
 /**
- * 创建验收参数
+ * 验收参数
  */
 export interface CreateVerificationParams {
   commitmentId: string
-  verifierId: string       // 验收方 ID
+  verifierId: string       // 验收方 ID（通常是委托方）
   fulfilled: boolean       // 是否履约
   evidence?: string        // 证据链接
   comment?: string         // 备注
@@ -69,6 +87,9 @@ export interface VerificationResult {
   createdAt: string
 }
 
+/**
+ * 信誉结果
+ */
 export interface ReputationResult {
   userId: string
   score: number           // 0-1000
@@ -85,14 +106,14 @@ export interface ReputationResult {
 export class VCA_SDK {
   
   /**
-   * 创建承诺
+   * 委托方发起承诺请求
    * 
    * @example
    * ```typescript
-   * // ToWow 协商成功后创建承诺
+   * // ToWow 协商成功后，委托方发起承诺
    * await sdk.createCommitment({
-   *   executorId: 'towow:user:123',   // 接单的人（执行方）
-   *   delegatorId: 'towow:user:456',  // 发布任务的人（委托方）
+   *   promiserId: 'user_123',      // 接任务的人（承诺方）
+   *   delegatorId: 'user_456',     // 发布任务的人（委托方）
    *   task: '完成登录页面开发',
    *   deadline: '2026-02-25T18:00:00Z',
    *   context: 'towow',
@@ -101,44 +122,131 @@ export class VCA_SDK {
    * ```
    */
   async createCommitment(params: CreateCommitmentParams): Promise<CommitmentResult> {
-    if (!params.executorId) {
-      throw new Error('executorId is required')
+    if (!params.promiserId) {
+      throw new Error('promiserId is required')
+    }
+    if (!params.delegatorId) {
+      throw new Error('delegatorId is required')
     }
     if (!params.task) {
       throw new Error('task is required')
     }
 
-    const executor = await this.findOrCreateUser(params.executorId)
-    let delegator = null
-    if (params.delegatorId) {
-      delegator = await this.findOrCreateUser(params.delegatorId)
-    }
+    const promiser = await this.findOrCreateUser(params.promiserId)
+    const delegator = await this.findOrCreateUser(params.delegatorId)
 
     const commitment = await prisma.commitment.create({
       data: {
-        promiserId: executor.id,
-        receiverId: delegator?.id || null,
+        promiserId: promiser.id,
+        receiverId: delegator.id,
         task: params.task,
         deadline: params.deadline ? new Date(params.deadline) : null,
         context: params.context || 'api',
+        source: params.context || 'api',
         towowTaskId: params.externalId || null,
+        status: 'PENDING_ACCEPT', // 新建时等待承诺方确认
       } as any
     })
 
-    await this.logAudit('create_commitment', params.executorId, 'commitment', commitment.id, params)
+    await this.logAudit('create_commitment', params.delegatorId, 'commitment', commitment.id, params)
 
-    return {
-      id: commitment.id,
-      executorId: executor.id,
-      delegatorId: delegator?.id || undefined,
-      task: commitment.task,
-      status: commitment.status as CommitmentResult['status'],
-      deadline: commitment.deadline?.toISOString() || undefined,
-      context: commitment.context,
-      source: params.context || 'api',
-      externalId: (commitment as any).towowTaskId || undefined,
-      createdAt: commitment.createdAt.toISOString()
+    return this.formatCommitment(commitment, promiser.id, delegator.id)
+  }
+
+  /**
+   * 承诺方接受承诺
+   */
+  async acceptCommitment(commitmentId: string, promiserId: string): Promise<CommitmentResult> {
+    const commitment = await prisma.commitment.findUnique({
+      where: { id: commitmentId }
+    })
+
+    if (!commitment) {
+      throw new Error('Commitment not found')
     }
+
+    const user = await this.findUser(promiserId)
+    if (!user || commitment.promiserId !== user.id) {
+      throw new Error('Not authorized to accept this commitment')
+    }
+
+    if (commitment.status !== 'PENDING_ACCEPT') {
+      throw new Error(`Cannot accept commitment with status ${commitment.status}`)
+    }
+
+    const updated = await prisma.commitment.update({
+      where: { id: commitmentId },
+      data: { status: 'ACCEPTED' }
+    })
+
+    await this.logAudit('accept_commitment', promiserId, 'commitment', commitmentId, {})
+
+    return this.formatCommitment(updated, commitment.promiserId, commitment.receiverId || undefined)
+  }
+
+  /**
+   * 承诺方拒绝承诺
+   */
+  async rejectCommitment(commitmentId: string, promiserId: string, reason?: string): Promise<CommitmentResult> {
+    const commitment = await prisma.commitment.findUnique({
+      where: { id: commitmentId }
+    })
+
+    if (!commitment) {
+      throw new Error('Commitment not found')
+    }
+
+    const user = await this.findUser(promiserId)
+    if (!user || commitment.promiserId !== user.id) {
+      throw new Error('Not authorized to reject this commitment')
+    }
+
+    if (commitment.status !== 'PENDING_ACCEPT') {
+      throw new Error(`Cannot reject commitment with status ${commitment.status}`)
+    }
+
+    const updated = await prisma.commitment.update({
+      where: { id: commitmentId },
+      data: { status: 'REJECTED' }
+    })
+
+    await this.logAudit('reject_commitment', promiserId, 'commitment', commitmentId, { reason })
+
+    return this.formatCommitment(updated, commitment.promiserId, commitment.receiverId || undefined)
+  }
+
+  /**
+   * 承诺方提交履约（标记为待验收）
+   */
+  async submitFulfillment(commitmentId: string, promiserId: string, evidence?: string): Promise<CommitmentResult> {
+    const commitment = await prisma.commitment.findUnique({
+      where: { id: commitmentId }
+    })
+
+    if (!commitment) {
+      throw new Error('Commitment not found')
+    }
+
+    const user = await this.findUser(promiserId)
+    if (!user || commitment.promiserId !== user.id) {
+      throw new Error('Not authorized')
+    }
+
+    if (commitment.status !== 'ACCEPTED' && commitment.status !== 'PENDING') {
+      throw new Error(`Cannot submit with status ${commitment.status}`)
+    }
+
+    const updated = await prisma.commitment.update({
+      where: { id: commitmentId },
+      data: { 
+        status: 'PENDING',
+        evidence: evidence || null
+      }
+    })
+
+    await this.logAudit('submit_fulfillment', promiserId, 'commitment', commitmentId, { evidence })
+
+    return this.formatCommitment(updated, commitment.promiserId, commitment.receiverId || undefined)
   }
 
   /**
@@ -151,30 +259,19 @@ export class VCA_SDK {
 
     if (!commitment) return null
 
-    return {
-      id: commitment.id,
-      executorId: commitment.promiserId,
-      delegatorId: commitment.receiverId || undefined,
-      task: commitment.task,
-      status: commitment.status as CommitmentResult['status'],
-      deadline: commitment.deadline?.toISOString() || undefined,
-      context: commitment.context,
-      source: 'api',
-      externalId: (commitment as any).towowTaskId || undefined,
-      createdAt: commitment.createdAt.toISOString()
-    }
+    return this.formatCommitment(commitment, commitment.promiserId, commitment.receiverId || undefined)
   }
 
   /**
-   * 列出我执行的承诺
+   * 列出我承诺的任务（承诺方视角）
    */
-  async listMyExecutions(params: {
-    executorId: string
-    status?: string
+  async listMyPromises(params: {
+    promiserId: string
+    status?: CommitmentStatus
     limit?: number
     offset?: number
   }): Promise<{ commitments: CommitmentResult[]; total: number }> {
-    const user = await this.findUser(params.executorId)
+    const user = await this.findUser(params.promiserId)
     if (!user) return { commitments: [], total: 0 }
 
     const where: any = { promiserId: user.id }
@@ -191,28 +288,17 @@ export class VCA_SDK {
     ])
 
     return {
-      commitments: commitments.map(c => ({
-        id: c.id,
-        executorId: c.promiserId,
-        delegatorId: c.receiverId || undefined,
-        task: c.task,
-        status: c.status as CommitmentResult['status'],
-        deadline: c.deadline?.toISOString() || undefined,
-        context: c.context,
-        source: 'api',
-        externalId: (c as any).towowTaskId || undefined,
-        createdAt: c.createdAt.toISOString()
-      })),
+      commitments: commitments.map(c => this.formatCommitment(c, c.promiserId, c.receiverId || undefined)),
       total
     }
   }
 
   /**
-   * 列出我委托的承诺
+   * 列出我委托的任务（委托方视角）
    */
   async listMyDelegations(params: {
     delegatorId: string
-    status?: string
+    status?: CommitmentStatus
     limit?: number
     offset?: number
   }): Promise<{ commitments: CommitmentResult[]; total: number }> {
@@ -233,31 +319,20 @@ export class VCA_SDK {
     ])
 
     return {
-      commitments: commitments.map(c => ({
-        id: c.id,
-        executorId: c.promiserId,
-        delegatorId: c.receiverId || undefined,
-        task: c.task,
-        status: c.status as CommitmentResult['status'],
-        deadline: c.deadline?.toISOString() || undefined,
-        context: c.context,
-        source: 'api',
-        externalId: (c as any).towowTaskId || undefined,
-        createdAt: c.createdAt.toISOString()
-      })),
+      commitments: commitments.map(c => this.formatCommitment(c, c.promiserId, c.receiverId || undefined)),
       total
     }
   }
 
   /**
-   * 验收承诺（添加履约证明）
+   * 委托方验收承诺
    * 
    * @example
    * ```typescript
    * // 委托方验收承诺
    * await sdk.verifyCommitment({
    *   commitmentId: 'xxx',
-   *   verifierId: 'towow:user:456',  // 委托方验收
+   *   verifierId: 'user_456',  // 委托方验收
    *   fulfilled: true,
    *   comment: '完成得很好'
    * })
@@ -272,7 +347,11 @@ export class VCA_SDK {
       throw new Error('Commitment not found')
     }
 
-    const verifier = await this.findOrCreateUser(params.verifierId)
+    // 验证验收方是委托方
+    const verifier = await this.findUser(params.verifierId)
+    if (!verifier || commitment.receiverId !== verifier.id) {
+      throw new Error('Not authorized to verify this commitment')
+    }
 
     const attestation = await prisma.attestation.create({
       data: {
@@ -285,17 +364,11 @@ export class VCA_SDK {
     })
 
     // 更新承诺状态
-    if (params.fulfilled && commitment.status === 'PENDING') {
-      await prisma.commitment.update({
-        where: { id: params.commitmentId },
-        data: { status: 'FULFILLED' }
-      })
-    } else if (!params.fulfilled && commitment.status === 'PENDING') {
-      await prisma.commitment.update({
-        where: { id: params.commitmentId },
-        data: { status: 'FAILED' }
-      })
-    }
+    const newStatus = params.fulfilled ? 'FULFILLED' : 'FAILED'
+    await prisma.commitment.update({
+      where: { id: params.commitmentId },
+      data: { status: newStatus }
+    })
 
     await this.logAudit('verify_commitment', params.verifierId, 'attestation', attestation.id, params)
 
@@ -336,7 +409,9 @@ export class VCA_SDK {
     const totalCommitments = commitments.length
     const fulfilledCount = commitments.filter(c => c.status === 'FULFILLED').length
     const failedCount = commitments.filter(c => c.status === 'FAILED').length
-    const pendingCount = commitments.filter(c => c.status === 'PENDING').length
+    const pendingCount = commitments.filter(c => 
+      c.status === 'PENDING' || c.status === 'PENDING_ACCEPT' || c.status === 'ACCEPTED'
+    ).length
 
     const completedCount = fulfilledCount + failedCount
     const fulfillmentRate = completedCount > 0 ? fulfilledCount / completedCount : 0
@@ -358,6 +433,26 @@ export class VCA_SDK {
   }
 
   // ============ 私有方法 ============
+
+  private formatCommitment(
+    commitment: any, 
+    promiserId: string, 
+    delegatorId?: string
+  ): CommitmentResult {
+    return {
+      id: commitment.id,
+      promiserId,
+      delegatorId: delegatorId || '',
+      task: commitment.task,
+      status: commitment.status as CommitmentStatus,
+      deadline: commitment.deadline?.toISOString() || undefined,
+      context: commitment.context,
+      source: commitment.source || 'api',
+      externalId: commitment.towowTaskId || undefined,
+      createdAt: commitment.createdAt.toISOString(),
+      updatedAt: commitment.updatedAt.toISOString()
+    }
+  }
 
   private async findUser(externalId: string) {
     return await prisma.user.findFirst({
