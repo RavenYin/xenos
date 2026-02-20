@@ -6,7 +6,11 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:api": "playwright test tests/api.spec.ts",
+    "test:e2e": "playwright test tests/e2e.spec.ts"
   },
   "dependencies": {
     "@noble/ed25519": "^3.0.0",
@@ -21,6 +25,7 @@
     "uint8arrays": "^5.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@prisma/client": "^5.22.0",
     "@types/node": "^20",
     "@types/react": "^18",
