@@ -13,13 +13,17 @@
     "test:e2e": "playwright test tests/e2e.spec.ts"
   },
   "dependencies": {
+    "@digitalbazaar/did-method-key": "^5.3.0",
+    "@digitalcredentials/vc": "^10.0.2",
     "@noble/ed25519": "^3.0.0",
     "@noble/hashes": "^2.0.1",
     "base58-js": "^3.0.3",
+    "did-method-key": "^0.7.0",
     "dotenv": "^17.3.1",
     "multibase": "^4.0.6",
     "multiformats": "^13.4.2",
     "next": "14.2.24",
+    "next-auth": "^4.24.13",
     "react": "^18",
     "react-dom": "^18",
     "uint8arrays": "^5.1.0"
