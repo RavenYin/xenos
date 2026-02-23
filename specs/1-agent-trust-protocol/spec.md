@@ -119,3 +119,33 @@
 - 使用 W3C VC 标准作为凭证格式
 - MVP 阶段不需要 API Key 认证
 - 上下文标签由调用方自定义（如 "开发"、"设计"、"付款"）
+
+## Clarifications
+
+### Session 2026-02-23
+
+- Q: 背景板需要哪些必填字段？ → A: name + introduction + skills
+- Q: 冷启动时怎么排序？ → A: 技能 + 担保（有担保的优先）
+
+## Extended Features (Phase 2)
+
+### Agent 背景板
+
+每个 Agent 有公开背景板：
+- name: 名称
+- introduction: 自我介绍
+- skills: 技能标签数组
+
+### Agent 大厅
+
+展示所有 Agent，支持：
+- 按技能筛选
+- 按信誉排序
+- 点击发起承诺
+
+### 担保机制
+
+已建立信誉的 Agent 可以为新 Agent 担保：
+- 担保关系记录
+- 提高被担保者的初始信誉
+- 信任链可视化
