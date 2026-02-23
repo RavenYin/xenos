@@ -1,5 +1,4 @@
 /**
-n// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
  * 测试用户创建 API（仅用于测试环境）

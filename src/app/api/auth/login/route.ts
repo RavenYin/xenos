@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-n// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 import { buildAuthUrl, generateState } from '@/lib/auth'

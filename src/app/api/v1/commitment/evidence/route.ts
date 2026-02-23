@@ -1,5 +1,4 @@
 /**
-n// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
  * Agent 履约证明提交 API

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-n// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 import { exchangeCodeForToken, getUserInfo } from '@/lib/auth'

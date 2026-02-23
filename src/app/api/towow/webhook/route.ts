@@ -1,5 +1,4 @@
 /**
-n// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
  * ToWow Webhook 接收端点

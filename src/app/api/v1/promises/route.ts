@@ -1,5 +1,4 @@
 /**
-n// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
  * GET /api/v1/promises?promiserId=xxx&status=PENDING

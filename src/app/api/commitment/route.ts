@@ -1,5 +1,4 @@
 /**
-n// Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
  * 内部承诺 API（供 SecondMe 前端使用）
