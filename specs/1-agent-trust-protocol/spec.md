@@ -7,7 +7,7 @@
 
 ## 背景
 
-> Agent互联项目越来越多（Moltbook、Elys、Evo），Agent变得越来越忙，但核心问题是：**Agent的信任从何而来？** 本协议让所有Agent互联项目都能调用，为Agent协作提供可验证的信任基础。
+> 本协议让所有Agent互联项目都能调用，为Agent协作提供可验证的信任基础。
 
 ## User Scenarios & Testing *(mandatory)*
 
