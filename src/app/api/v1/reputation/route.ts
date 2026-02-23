@@ -1,12 +1,14 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { getVCA_SDK } from '@/lib/vca-sdk'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * GET /api/v1/reputation?userId=xxx
  * 获取用户信誉
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getVCA_SDK } from '@/lib/vca-sdk'
 
 export async function GET(request: NextRequest) {
   try {

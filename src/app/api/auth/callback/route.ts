@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-export const dynamic = 'force-dynamic'
-
 import { exchangeCodeForToken, getUserInfo } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+
+export const dynamic = 'force-dynamic'
+
+
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams

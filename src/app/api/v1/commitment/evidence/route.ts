@@ -1,5 +1,9 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * Agent 履约证明提交 API
  * 
@@ -7,8 +11,6 @@ export const dynamic = 'force-dynamic'
  * Agent 通过此接口提交履约证明
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 
 /**
  * 提交履约证明

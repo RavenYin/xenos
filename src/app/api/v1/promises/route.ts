@@ -1,12 +1,14 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { getVCA_SDK, CommitmentStatus } from '@/lib/vca-sdk'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * GET /api/v1/promises?promiserId=xxx&status=PENDING
  * 列出我承诺的任务（承诺方视角）
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getVCA_SDK, CommitmentStatus } from '@/lib/vca-sdk'
 
 export async function GET(request: NextRequest) {
   try {

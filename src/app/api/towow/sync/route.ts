@@ -1,5 +1,11 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { getVCA_SDK } from '@/lib/vca-sdk'
+import { getTowowClient, isTowowEnabled } from '@/lib/towow'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * ToWow 任务发布到 VCA
  * 
@@ -7,10 +13,6 @@ export const dynamic = 'force-dynamic'
  * 将 ToWow 任务同步为 VCA 承诺
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getVCA_SDK } from '@/lib/vca-sdk'
-import { getTowowClient, isTowowEnabled } from '@/lib/towow'
 
 /**
  * POST /api/towow/sync

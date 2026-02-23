@@ -1,5 +1,9 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * 内部承诺 API（供 SecondMe 前端使用）
  * 
@@ -7,8 +11,6 @@ export const dynamic = 'force-dynamic'
  * POST /api/commitment - 创建承诺
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
   const userId = request.cookies.get('session_user_id')?.value

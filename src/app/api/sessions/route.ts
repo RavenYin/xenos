@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-export const dynamic = 'force-dynamic'
-
 import { getValidAccessToken } from '@/lib/auth'
 import { getChatSessions } from '@/lib/secondme'
+
+export const dynamic = 'force-dynamic'
+
+
 
 export async function GET(request: NextRequest) {
   const userId = request.cookies.get('session_user_id')?.value

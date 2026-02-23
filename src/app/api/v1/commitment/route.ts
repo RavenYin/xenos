@@ -1,5 +1,9 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { getVCA_SDK, CreateCommitmentParams } from '@/lib/vca-sdk'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * VCA SDK REST API - v1
  * 
@@ -9,8 +13,6 @@ export const dynamic = 'force-dynamic'
  * GET  /api/v1/commitment - 获取承诺详情
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getVCA_SDK, CreateCommitmentParams } from '@/lib/vca-sdk'
 
 /**
  * 验证 API Key

@@ -1,5 +1,9 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { getTowowClient, isTowowEnabled } from '@/lib/towow'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * ToWow 任务同步 API
  * 
@@ -7,8 +11,6 @@ export const dynamic = 'force-dynamic'
  * POST /api/towow/sync - 手动同步任务
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getTowowClient, isTowowEnabled } from '@/lib/towow'
 
 /**
  * GET /api/towow/tasks

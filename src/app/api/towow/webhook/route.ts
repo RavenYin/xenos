@@ -1,5 +1,10 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { getVCA_SDK } from '@/lib/vca-sdk'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * ToWow Webhook 接收端点
  * 
@@ -8,9 +13,6 @@ export const dynamic = 'force-dynamic'
  * - task.verified: 任务验收完成，更新承诺状态
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getVCA_SDK } from '@/lib/vca-sdk'
 
 /**
  * POST /api/towow/webhook

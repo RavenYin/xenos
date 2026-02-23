@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getUserReputation } from '@/lib/reputation'
+
 export const dynamic = 'force-dynamic'
 
-import { getUserReputation } from '@/lib/reputation'
+
 
 export async function GET(request: NextRequest) {
   const userId = request.cookies.get('session_user_id')?.value

@@ -1,12 +1,14 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * POST /api/commitment/accept
  * 承诺方接受承诺
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   const userId = request.cookies.get('session_user_id')?.value

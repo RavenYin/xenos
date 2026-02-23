@@ -1,5 +1,9 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { getVCA_SDK } from '@/lib/vca-sdk'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * POST /api/v1/commitment/submit
  * 承诺方提交履约（标记为待验收）
@@ -12,8 +16,6 @@ export const dynamic = 'force-dynamic'
  * }
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getVCA_SDK } from '@/lib/vca-sdk'
 
 export async function POST(request: NextRequest) {
   try {

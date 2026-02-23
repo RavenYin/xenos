@@ -1,12 +1,14 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { getVCA_SDK, CommitmentStatus } from '@/lib/vca-sdk'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * GET /api/v1/delegations?delegatorId=xxx&status=PENDING_ACCEPT
  * 列出我委托的任务（委托方视角）
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getVCA_SDK, CommitmentStatus } from '@/lib/vca-sdk'
 
 export async function GET(request: NextRequest) {
   try {

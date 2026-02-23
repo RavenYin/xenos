@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-export const dynamic = 'force-dynamic'
-
 import { getValidAccessToken, getUserInfo } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+
+export const dynamic = 'force-dynamic'
+
+
 
 export async function GET(request: NextRequest) {
   const userId = request.cookies.get('session_user_id')?.value

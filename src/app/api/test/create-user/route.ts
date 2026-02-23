@@ -1,11 +1,13 @@
-/**
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+
 export const dynamic = 'force-dynamic'
+
+/**
 
  * 测试用户创建 API（仅用于测试环境）
  */
 
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   // 仅在非生产环境允许
