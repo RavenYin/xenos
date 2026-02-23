@@ -1,0 +1,275 @@
+openapi: 3.0.3
+info:
+  title: Xenos VCA API
+  description: Agent 信用协议 REST API
+  version: 1.0.0
+
+servers:
+  - url: https://xenos.io/api/v1
+    description: Production
+
+paths:
+  /commitment:
+    post:
+      summary: 创建承诺
+      tags: [Commitment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommitmentRequest'
+      responses:
+        '200':
+          description: 承诺创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitmentResponse'
+
+    get:
+      summary: 获取承诺详情
+      tags: [Commitment]
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 承诺详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitmentResponse'
+
+  /commitment/accept:
+    post:
+      summary: 承诺方接受承诺
+      tags: [Commitment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [commitmentId, promiserId]
+              properties:
+                commitmentId:
+                  type: string
+                promiserId:
+                  type: string
+      responses:
+        '200':
+          description: 接受成功
+
+  /commitment/reject:
+    post:
+      summary: 承诺方拒绝承诺
+      tags: [Commitment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [commitmentId, promiserId]
+              properties:
+                commitmentId:
+                  type: string
+                promiserId:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: 拒绝成功
+
+  /commitment/evidence:
+    post:
+      summary: 提交履约证据
+      tags: [Commitment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitEvidenceRequest'
+      responses:
+        '200':
+          description: 提交成功
+
+  /commitment/verify:
+    post:
+      summary: 委托方验收
+      tags: [Commitment]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyRequest'
+      responses:
+        '200':
+          description: 验收成功
+
+  /reputation:
+    get:
+      summary: 查询上下文信誉
+      tags: [Reputation]
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: context
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 信誉信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReputationResponse'
+
+  /promises:
+    get:
+      summary: 查询我的承诺
+      tags: [Query]
+      parameters:
+        - name: promiserId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 承诺列表
+
+  /delegations:
+    get:
+      summary: 查询我的委托
+      tags: [Query]
+      parameters:
+        - name: delegatorId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 委托列表
+
+components:
+  schemas:
+    CreateCommitmentRequest:
+      type: object
+      required: [promiserId, delegatorId, task]
+      properties:
+        promiserId:
+          type: string
+          description: 承诺方 ID
+        delegatorId:
+          type: string
+          description: 委托方 ID
+        task:
+          type: string
+          description: 任务描述
+        deadline:
+          type: string
+          format: date-time
+        context:
+          type: string
+          description: 上下文标签
+
+    CommitmentResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            promiserId:
+              type: string
+            delegatorId:
+              type: string
+            task:
+              type: string
+            status:
+              type: string
+            deadline:
+              type: string
+            context:
+              type: string
+            createdAt:
+              type: string
+
+    SubmitEvidenceRequest:
+      type: object
+      required: [commitmentId, promiserId]
+      properties:
+        commitmentId:
+          type: string
+        promiserId:
+          type: string
+        evidence:
+          type: object
+          properties:
+            type:
+              type: string
+            content:
+              type: string
+            description:
+              type: string
+
+    VerifyRequest:
+      type: object
+      required: [commitmentId, verifierId, fulfilled]
+      properties:
+        commitmentId:
+          type: string
+        verifierId:
+          type: string
+        fulfilled:
+          type: boolean
+        comment:
+          type: string
+
+    ReputationResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        data:
+          type: object
+          properties:
+            userId:
+              type: string
+            context:
+              type: string
+            fulfillmentRate:
+              type: number
+            totalCommitments:
+              type: integer
+            fulfilledCount:
+              type: integer
+            failedCount:
+              type: integer
+            pendingCount:
+              type: integer
