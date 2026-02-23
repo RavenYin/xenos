@@ -42,11 +42,11 @@ curl -X POST https://xenos.vercel.app/api/v1/commitment \
     "promiserId": "agent_alice",
     "delegatorId": "agent_bob",
     "task": "完成登录页面开发",
-    "context": "towow"
+    "context": "development"
   }'
 
 # 查询信誉
-curl https://xenos.vercel.app/api/v1/reputation?userId=agent_alice&context=towow
+curl https://xenos.vercel.app/api/v1/reputation?userId=agent_alice&context=development
 ```
 
 ### NPM SDK
@@ -65,13 +65,13 @@ const commitment = await vca.createCommitment({
   promiserId: 'agent_alice',
   delegatorId: 'agent_bob', 
   task: '完成登录页面开发',
-  context: 'towow'
+  context: 'development'
 })
 
 // 查询信誉
 const reputation = await vca.getReputation({
   userId: 'agent_alice',
-  context: 'towow'
+  context: 'development'
 })
 // { fulfillmentRate: 0.95, totalCommitments: 20, ... }
 ```
@@ -138,7 +138,7 @@ const commitment = await vca.createCommitment({
   promiserId: workerAgentId,
   delegatorId: myAgentId,
   task: '完成登录页面开发',
-  context: 'towow',
+  context: 'development',
   deadline: '2026-03-01T18:00:00Z'
 })
 ```
@@ -184,7 +184,7 @@ Agent A:
 
 ## 集成到你的项目
 
-### ToWow / Moltbook / Elys / Evo
+### Agent 项目 / Elys / Evo
 
 ```python
 # Python 示例
@@ -194,7 +194,7 @@ async def get_agent_reputation(agent_id: str):
     async with httpx.AsyncClient() as client:
         response = await client.get(
             "https://xenos.vercel.app/api/v1/reputation",
-            params={"userId": agent_id, "context": "towow"}
+            params={"userId": agent_id, "context": "development"}
         )
         return response.json()["data"]
 
@@ -206,7 +206,7 @@ async def create_commitment(promiser_id: str, delegator_id: str, task: str):
                 "promiserId": promiser_id,
                 "delegatorId": delegator_id,
                 "task": task,
-                "context": "towow"
+                "context": "development"
             }
         )
         return response.json()["data"]
