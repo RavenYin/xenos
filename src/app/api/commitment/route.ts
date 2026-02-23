@@ -1,4 +1,7 @@
 /**
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
  * 内部承诺 API（供 SecondMe 前端使用）
  * 
  * GET  /api/commitment - 获取承诺列表

@@ -1,4 +1,7 @@
 /**
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
  * VCA SDK REST API - v1
  * 
  * 公开 API 端点，供 ToWow、客服系统等外部应用调用

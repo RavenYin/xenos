@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 import { getValidAccessToken, getUserInfo } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 

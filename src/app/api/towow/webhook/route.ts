@@ -1,4 +1,7 @@
 /**
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
  * ToWow Webhook 接收端点
  * 
  * ToWow 平台在以下事件时调用此接口：

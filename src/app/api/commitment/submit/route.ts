@@ -1,4 +1,7 @@
 /**
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
  * POST /api/commitment/submit
  * 承诺方提交履约
  */

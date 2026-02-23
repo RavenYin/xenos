@@ -1,4 +1,7 @@
 /**
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
  * GET /api/v1/delegations?delegatorId=xxx&status=PENDING_ACCEPT
  * 列出我委托的任务（委托方视角）
  */

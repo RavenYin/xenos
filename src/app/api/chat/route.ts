@@ -1,4 +1,7 @@
 import { NextRequest } from 'next/server'
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 import { getValidAccessToken } from '@/lib/auth'
 
 const API_BASE_URL = process.env.SECONDME_API_BASE_URL || 'https://app.mindos.com/gate/lab'

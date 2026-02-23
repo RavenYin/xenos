@@ -1,4 +1,7 @@
 /**
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
  * GET /api/v1/reputation?userId=xxx
  * 获取用户信誉
  */

@@ -1,4 +1,7 @@
 /**
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
  * ToWow 任务同步 API
  * 
  * GET /api/towow/tasks - 获取 ToWow 任务列表

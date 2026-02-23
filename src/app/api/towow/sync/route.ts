@@ -1,4 +1,7 @@
 /**
+n// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
  * ToWow 任务发布到 VCA
  * 
  * POST /api/towow/sync
