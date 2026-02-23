@@ -1,147 +1,84 @@
 <!--
 =============================================================================
-SYNC IMPACT REPORT
+同步影响报告
 =============================================================================
-Version Change: 0.0.0 → 1.0.0 (Initial ratification)
+版本变更: 1.0.0 → 1.1.0 (简化重构)
 
-Modified Principles: N/A (Initial creation)
+修改原则:
+  - 合并 I-V 为 4 个核心原则
+  - 移除详细的集成标准和开发流程
 
-Added Sections:
-  - I. Agent-First Design
-  - II. Verifiable Trust
-  - III. Lightweight Protocol
-  - IV. Evidence-Based Verification
-  - V. Reputation as Currency
-  - Integration Standards
-  - Development Workflow
+新增章节: 无
 
-Removed Sections: N/A
+移除章节:
+  - Integration Standards (集成标准)
+  - Development Workflow (开发流程)
 
-Templates Status:
-  - .specify/templates/plan-template.md: ✅ Compatible
-  - .specify/templates/spec-template.md: ✅ Compatible
-  - .specify/templates/tasks-template.md: ✅ Compatible
-
-Follow-up TODOs: None
+待办事项: 无
 =============================================================================
 -->
 
-# Xenos Constitution
+# Xenos 项目宪法
 
-## Core Principles
+## 项目定位
 
-### I. Agent-First Design
+Xenos 是面向 AI Agent 的轻量级承诺证明系统。
 
-Xenos is designed for AI Agent networks, NOT human-centric workflows.
+## 核心理念
 
-**Rules:**
-- Every API endpoint MUST support programmatic access (REST + SDK)
-- Evidence submission MUST support multiple types: link, GitHub PR, text, document
-- Verification MUST be automatable via API (no manual-only workflows)
-- Timeouts and deadlines MUST be explicit and machine-parseable (ISO 8601)
-- All responses MUST be JSON with consistent structure: `{ code: number, data: any }`
+### 一、轻量
 
-**Rationale:** Agents cannot interpret vague instructions or navigate complex UI flows. Protocol clarity enables autonomous agent collaboration.
+最小化依赖，快速启动。
 
-### II. Verifiable Trust
+- 核心 API 仅需 HTTP + JSON
+- 无区块链依赖
+- SDK 一行安装：`npm install @xenos/vca-sdk`
+- 响应时间 < 500ms
 
-Trust is earned through verifiable commitments, not claims.
+### 二、开放
 
-**Rules:**
-- Every commitment MUST have a lifecycle: PENDING_ACCEPT → ACCEPTED → PENDING → FULFILLED/FAILED
-- State transitions MUST be recorded in audit logs
-- Evidence MUST be attached before verification can occur
-- Attestations MUST include: attester ID, fulfilled status, timestamp, optional comment
-- No commitment is "trusted" without at least one attestation
+提供 REST API，任何 Agent 都可调用。
 
-**Rationale:** In agent networks, reputation must be cryptographically and procedurally verifiable, not social signals.
+- 所有端点支持程序化访问
+- 统一响应格式：`{ code: 0, data: {...} }`
+- Webhook 支持外部系统集成
+- 无复杂认证（MVP 阶段）
 
-### III. Lightweight Protocol
+### 三、信任
 
-Minimal overhead, maximum interoperability.
+通过可验证凭证建立信任。
 
-**Rules:**
-- Core API MUST work with HTTP + JSON (no complex auth for MVP)
-- SDK MUST be installable via NPM: `npm install @xenos/vca-sdk`
-- Webhook payloads MUST be self-contained (no callback queries needed)
-- External integrations (ToWow, etc.) MUST use standard REST endpoints
-- No blockchain dependencies for MVP phase
+- 承诺生命周期完整记录
+- 状态变更写入审计日志
+- 履约需要证据支持
+- 验收结果形成可信凭证
 
-**Rationale:** Heavy protocols create adoption friction. Lightweight = faster integration = more agents using the trust layer.
+### 四、简单
 
-### IV. Evidence-Based Verification
+清晰的接口，易于集成。
 
-No verification without evidence; no reputation without verification.
+- 6 种证据类型：链接、GitHub PR、代码提交、文档、截图、文字
+- 7 种承诺状态：待确认 → 已接受 → 待验收 → 已完成/失败
+- 明确的角色：承诺方（接任务）、委托方（发任务）
+- 中文优先的接口文档
 
-**Rules:**
-- Evidence types MUST include: `link`, `github_pr`, `github_commit`, `document`, `screenshot`, `text`
-- Evidence MUST be submitted BEFORE verification request
-- Delegators MAY request additional evidence (status reverts to ACCEPTED)
-- Evidence content MUST be preserved immutably in audit logs
-- Links MUST be validated as valid URLs (200 OK not required)
+## 信誉体系
 
-**Rationale:** Evidence creates accountability trail. Without it, attestation is meaningless and reputation gaming becomes trivial.
+| 分数 | 等级 |
+|------|------|
+| 0-199 | 新人 |
+| 200-399 | 入门 |
+| 400-599 | 熟练 |
+| 600-749 | 专家 |
+| 750-899 | 大师 |
+| 900-1000 | 传奇 |
 
-### V. Reputation as Currency
+**计算公式**: `分数 = 履约率 × 700 + min(完成数 × 20, 200)`
 
-Reputation score quantifies trustworthiness across the agent network.
+## 治理
 
-**Rules:**
-- Score range: 0-1000 (integer)
-- Levels: 新人 (0-199), 入门 (200-399), 熟练 (400-599), 专家 (600-749), 大师 (750-899), 传奇 (900-1000)
-- Score calculation: `baseScore = fulfillmentRate * 700`, `quantityBonus = min(fulfilledCount * 20, 200)`
-- Reputation queries MUST return: score, level, totalCommitments, fulfilledCount, failedCount, pendingCount, fulfillmentRate
-- Historical reputation data SHOULD be queryable for trend analysis
+- 修改原则需通过 GitHub Issue 提案
+- 破坏性变更需要迁移指南
+- 第三方集成需遵循 API 规范
 
-**Rationale:** Numeric reputation enables programmatic trust decisions: "Only accept commitments from agents with score > 600."
-
-## Integration Standards
-
-### External Platform Integration
-
-Platforms integrating with Xenos (ToWow, customer service systems, etc.) MUST:
-
-1. Call `/api/v1/commitment` to create commitments on behalf of users
-2. Use webhooks to receive state change notifications (optional)
-3. Include `context` field to identify source platform
-4. Include `externalId` to correlate with internal task IDs
-
-### API Versioning
-
-- URL versioning: `/api/v1/...`
-- Breaking changes require new version (`/api/v2/...`)
-- Non-breaking additions may extend existing version
-
-## Development Workflow
-
-### Code Quality
-
-- TypeScript strict mode enabled
-- All API endpoints MUST have error handling with proper HTTP status codes
-- Database changes MUST use Prisma migrations
-- Tests MUST pass before merge (Playwright for E2E)
-
-### Agent Developer Experience
-
-- API documentation MUST include code examples
-- Evidence form MUST show API snippet for programmatic submission
-- Error messages MUST be actionable (include field name, expected format)
-- Response times MUST be < 500ms for standard operations
-
-## Governance
-
-### Amendment Procedure
-
-1. Propose amendment via GitHub issue with rationale
-2. Document impact on existing integrations
-3. Update constitution version (MAJOR for breaking changes, MINOR for additions)
-4. Update dependent templates and documentation
-5. Announce to integration partners if breaking change
-
-### Compliance Review
-
-- All new features MUST verify alignment with principles
-- Breaking changes MUST have migration guide
-- Third-party integrations MUST follow integration standards
-
-**Version**: 1.0.0 | **Ratified**: 2026-02-23 | **Last Amended**: 2026-02-23
+**版本**: 1.1.0 | **批准日期**: 2026-02-23 | **最后修订**: 2026-02-23
