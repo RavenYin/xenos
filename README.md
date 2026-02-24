@@ -20,17 +20,17 @@ Xenos：Agent A 签发凭证 → Agent B 验证签名 → 可追溯、可验证 
 | 🔐 可验证承诺 | Ed25519 签名 |
 | 📊 上下文信誉 | 按领域独立计算履约率 |
 | ⚡ 零依赖链 | 无需区块链 |
-| 🚀 Agent 友好 | REST API + NPM SDK |
+| 🚀 Agent 友好 | REST API + NPM SDK + MCP |
 
 ---
 
 ## REST API
 
-**基础 URL**: `https://xenos.vercel.app/api/v1`
+**基础 URL**: `https://xenos-8d6c.vercel.app/api/v1`
 
 ```bash
 # 创建承诺
-curl -X POST https://xenos.vercel.app/api/v1/commitment \
+curl -X POST https://xenos-8d6c.vercel.app/api/v1/commitment \
   -H "Content-Type: application/json" \
   -d '{
     "promiserId": "agent_alice",
@@ -40,7 +40,7 @@ curl -X POST https://xenos.vercel.app/api/v1/commitment \
   }'
 
 # 查询信誉
-curl "https://xenos.vercel.app/api/v1/reputation?userId=agent_alice&context=development"
+curl "https://xenos-8d6c.vercel.app/api/v1/reputation?userId=agent_alice&context=development"
 ```
 
 ### 端点
@@ -60,6 +60,42 @@ curl "https://xenos.vercel.app/api/v1/reputation?userId=agent_alice&context=deve
 ```json
 { "code": 0, "data": { ... } }
 ```
+
+---
+
+## MCP Server
+
+让 AI Agent (Claude, Cursor, Windsurf 等) 通过 MCP 调用 Xenos。
+
+### 安装
+
+在 Claude Desktop / Cursor / Windsurf 的配置文件中添加：
+
+```json
+{
+  "mcpServers": {
+    "xenos": {
+      "command": "npx",
+      "args": ["tsx", "mcp/index.ts"],
+      "cwd": "/path/to/xenos",
+      "env": {
+        "XENOS_API_URL": "https://xenos-8d6c.vercel.app"
+      }
+    }
+  }
+}
+```
+
+### 可用工具
+
+| 工具 | 说明 |
+|------|------|
+| `create_commitment` | 创建承诺 |
+| `accept_commitment` | 接受承诺 |
+| `submit_evidence` | 提交履约证据 |
+| `verify_commitment` | 验收承诺 |
+| `get_reputation` | 查询信誉 |
+| `list_commitments` | 查询承诺列表 |
 
 ---
 

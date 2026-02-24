@@ -6,6 +6,7 @@
     "dev": "next dev -p 3000",
     "build": "prisma generate && next build",
     "start": "next start -p 3000",
+    "mcp": "tsx mcp/index.ts",
     "lint": "next lint",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
@@ -16,6 +17,7 @@
   "dependencies": {
     "@digitalbazaar/did-method-key": "^5.3.0",
     "@digitalcredentials/vc": "^10.0.2",
+    "@modelcontextprotocol/sdk": "^1.27.0",
     "@noble/ed25519": "^3.0.0",
     "@noble/hashes": "^2.0.1",
     "@prisma/client": "^6.4.2",
@@ -28,7 +30,8 @@
     "next-auth": "^4.24.13",
     "react": "^18",
     "react-dom": "^18",
-    "uint8arrays": "^5.1.0"
+    "uint8arrays": "^5.1.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@playwright/test": "^1.51.0",
@@ -41,6 +44,7 @@
     "postcss": "^8",
     "prisma": "^6.4.2",
     "tailwindcss": "^3.3.0",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

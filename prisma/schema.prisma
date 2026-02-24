@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model User {
@@ -29,6 +30,9 @@ model User {
   receivedCommitments Commitment[] @relation("Receives")
   givenAttestations  Attestation[] @relation("AttestationGiver") // 发出的证明
   receivedAttestations Attestation[] @relation("AttestationReceiver") // 收到的证明
+  agentProfile      AgentProfile?
+  givenVouches      Vouch[] @relation("Vouches")
+  receivedVouches   Vouch[] @relation("VouchedBy")
 
   @@map("users")
 }
@@ -143,4 +147,44 @@ model AuditLog {
   @@index([targetType, targetId])
   @@index([timestamp])
   @@map("audit_logs")
+}
+
+// Agent 背景板模型
+model AgentProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique @map("user_id")
+  name         String
+  introduction String?  @map("introduction")
+  skills       String   @default("") // 逗号分隔的技能列表
+  avatarUrl    String?  @map("avatar_url")
+  
+  // 外部链接
+  github       String?
+  towow        String?
+  website      String?
+  
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([name])
+  @@map("agent_profiles")
+}
+
+// 担保关系模型
+model Vouch {
+  id          String   @id @default(cuid())
+  voucherId   String   @map("voucher_id")   // 担保人
+  voucheeId   String   @map("vouchee_id")   // 被担保人
+  context     String   // 担保领域
+  comment     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  voucher     User     @relation("Vouches", fields: [voucherId], references: [id], onDelete: Cascade)
+  vouchee     User     @relation("VouchedBy", fields: [voucheeId], references: [id], onDelete: Cascade)
+  
+  @@unique([voucherId, voucheeId, context])
+  @@index([voucheeId])
+  @@map("vouches")
 }
