@@ -300,9 +300,29 @@ function Footer() {
   )
 }
 export default function HomePage() {
+  const [authError, setAuthError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const error = params.get('error')
+    const detail = params.get('detail')
+    if (error) {
+      setAuthError(detail ? `登录失败：${detail}` : `登录失败（${error}）`)
+    }
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
       <Navbar />
+      {authError && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-xl w-full px-4">
+          <div className="bg-red-900/80 border border-red-500 text-red-200 rounded-xl px-6 py-4 text-sm shadow-xl backdrop-blur-sm flex items-start gap-3">
+            <span className="mt-0.5 shrink-0">⚠️</span>
+            <span className="break-all">{authError}</span>
+            <button onClick={() => setAuthError(null)} className="ml-auto shrink-0 text-red-400 hover:text-white">✕</button>
+          </div>
+        </div>
+      )}
       <main>
         <Hero />
         <CoreConcepts />

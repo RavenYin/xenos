@@ -19,10 +19,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL('/?error=no_code', request.url))
   }
 
+  // 打印环境变量（脱敏）帮助排查
+  console.log('[callback] REDIRECT_URI =', process.env.SECONDME_REDIRECT_URI)
+  console.log('[callback] CLIENT_ID    =', process.env.SECONDME_CLIENT_ID)
+  console.log('[callback] API_BASE_URL =', process.env.SECONDME_API_BASE_URL)
+
+  let stage = 'token_exchange'
   try {
     // 用授权码换取 token
     const tokens = await exchangeCodeForToken(code)
     
+    stage = 'get_user_info'
     // 获取用户信息
     const userInfo = await getUserInfo(tokens.accessToken)
     
@@ -55,6 +62,7 @@ export async function GET(request: NextRequest) {
     // 计算 token 过期时间
     const tokenExpiresAt = new Date(Date.now() + tokens.expiresIn * 1000)
     
+    stage = 'db_upsert'
     // 保存或更新用户到数据库
     const user = await prisma.user.upsert({
       where: { 
@@ -94,18 +102,16 @@ export async function GET(request: NextRequest) {
 
     return response
   } catch (err) {
-    console.error('OAuth callback error:', err)
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(`OAuth callback error at stage [${stage}]:`, message)
     console.error('Error details:', {
-      message: err instanceof Error ? err.message : String(err),
+      message,
       stack: err instanceof Error ? err.stack : undefined,
       code: err instanceof Error ? (err as any).code : undefined
     })
-    
-    // 如果是特定的用户ID错误，提供更具体的错误信息
-    if (err instanceof Error && err.message.includes('用户ID获取失败')) {
-      return NextResponse.redirect(new URL(`/?error=invalid_user_data&message=${encodeURIComponent(err.message)}`, request.url))
-    }
-    
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url))
+
+    // 将错误阶段和原因透传到前端，方便排查
+    const errorParam = encodeURIComponent(`[${stage}] ${message}`.slice(0, 300))
+    return NextResponse.redirect(new URL(`/?error=auth_failed&detail=${errorParam}`, request.url))
   }
 }
