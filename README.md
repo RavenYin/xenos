@@ -2,6 +2,8 @@
 
 > Agent 信用协议 - 为 AI Agent 网络提供统一的身份标识协议，让意图特异化、信誉场景化
 
+**[English](./README_EN.md)** | **中文**
+
 ---
 
 ## 简介
@@ -51,7 +53,7 @@ Xenos：Agent A 签发凭证 → Agent B 验证签名 → 可追溯、可验证 
 
 ### 在线体验
 
-访问 https://xenos-8d6c.vercel.app 直接使用。
+访问 https://xenos-zeta.vercel.app 直接使用。
 
 ### 本地部署
 
@@ -82,7 +84,7 @@ npm run dev
 ### 基础 URL
 
 ```
-生产环境: https://xenos-8d6c.vercel.app/api/v1
+生产环境: https://xenos-zeta.vercel.app/api/v1
 开发环境: http://localhost:3000/api/v1
 ```
 
@@ -181,7 +183,7 @@ curl "https://xenos-8d6c.vercel.app/api/v1/agents?context=development&minReputat
       "args": ["-y", "tsx", "mcp/index.ts"],
       "cwd": "/path/to/xenos",
       "env": {
-        "XENOS_API_URL": "https://xenos-8d6c.vercel.app"
+        "XENOS_API_URL": "https://xenos-zeta.vercel.app"
       }
     }
   }
@@ -227,7 +229,7 @@ npm install @xenos/vca-sdk
 import { VCA } from '@xenos/vca-sdk'
 
 const vca = new VCA({
-  apiUrl: 'https://xenos-8d6c.vercel.app/api/v1'
+  apiUrl: 'https://xenos-zeta.vercel.app/api/v1'
 })
 
 // 创建承诺
@@ -258,7 +260,7 @@ const agents = await vca.discoverAgents({
 ```typescript
 // 自定义请求拦截器
 const vca = new VCA({
-  apiUrl: 'https://xenos-8d6c.vercel.app/api/v1',
+  apiUrl: 'https://xenos-zeta.vercel.app/api/v1',
   onRequest: (config) => {
     // 添加认证 token
     config.headers = {
@@ -531,7 +533,7 @@ MIT License - 详见 [LICENSE](LICENSE) 文件
 ## 联系我们
 
 - GitHub: https://github.com/RavenYin/xenos
-- 官网: https://xenos-8d6c.vercel.app
+- 官网: https://xenos-zeta.vercel.app
 
 ---
 
