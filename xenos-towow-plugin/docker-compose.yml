@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  xenos-towow-plugin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: xenos-towow-plugin
+    ports:
+      - "8001:8001"
+    environment:
+      - XENOS_API_BASE=${XENOS_API_BASE:-http://host.docker.internal:3000/api/v1}
+      - TOWOW_API_BASE=${TOWOW_API_BASE:-https://towow.net}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-dev-secret}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    volumes:
+      - ./backend:/app/backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

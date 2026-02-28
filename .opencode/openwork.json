@@ -1,4 +1,5 @@
 {
+  "$schema": "https://opencode.ai/config.json",
   "version": 1,
   "workspace": {
     "name": "Xenos",
@@ -6,6 +7,13 @@
     "preset": "starter"
   },
   "authorizedRoots": [
-    "E:\\VScode\\Xenos"
-  ]
+    "E:\VScode\Xenos"
+  ],
+  "permission": {
+    "*": "allow",
+    "edit": "allow",
+    "write": "allow",
+    "create": "allow",
+    "delete": "allow"
+  }
 }

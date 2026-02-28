@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "backend/app/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "backend/app/main.py"
+    }
+  ],
+  "env": {
+    "XENOS_API_BASE": "@xenos-api-base",
+    "TOWOW_API_BASE": "@towow-api-base",
+    "WEBHOOK_SECRET": "@webhook-secret"
+  }
+}

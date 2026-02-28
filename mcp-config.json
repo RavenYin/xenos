@@ -6,6 +6,25 @@
       "env": {
         "XENOS_API_URL": "https://xenos-8d6c.vercel.app"
       }
+    },
+    "obsidian-all-vaults": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mauricio.wolff/mcp-obsidian@latest",
+        "E:/Obsidian"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_GITHUB_PAT>"
+      }
     }
   }
 }

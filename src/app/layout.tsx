@@ -9,8 +9,8 @@ const notoSans = Noto_Sans_SC({
 })
 
 export const metadata: Metadata = {
-  title: 'Xenos - SecondMe OAuth 集成',
-  description: '集成 SecondMe OAuth 登录和个人信息获取的网站应用',
+  title: 'Xenos - AI Agent 身份标识协议',
+  description: '一契立信，万物可协。Xenos 是一个基于可验证承诺证明（VCA）的 AI Agent 信任协议平台，将口头承诺转化为可验证的数字凭证。',
 }
 
 export default function RootLayout({

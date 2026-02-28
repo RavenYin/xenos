@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp:*)",
+      "Bash(setx CLAUDE_CODE_GIT_BASH_PATH:*)",
+      "Bash(cmd:*)",
+      "Bash(powershell:*)",
+      "Bash(\"C:\\\\Program Files\\\\Git\\\\bin\\\\bash.exe\":*)",
+      "Bash(where git:*)",
+      "Bash(\"E:/Program Files/Git/bin/bash.exe\":*)",
+      "Bash(export:*)",
+      "Bash(codex:*)",
+      "mcp__web-search-prime__webSearchPrime",
+      "Bash(npm install:*)",
+      "Bash(npm config:*)",
+      "Bash(echo:*)",
+      "Bash(claude:*)",
+      "Bash(reg query:*)",
+      "Bash(\"C:\\\\Users\\\\jy\\\\.npm-global\\\\codex\":*)",
+      "Bash(where codex:*)",
+      "Bash(hash:*)",
+      "Bash(ls:*)",
+      "Bash(xargs grep:*)",
+      "Bash(curl:*)",
+      "Bash(npx skills:*)",
+      "mcp__web-reader__webReader",
+      "mcp__zread__read_file",
+      "mcp__zread__get_repo_structure",
+      "Bash(npx:*)",
+      "Bash(git clone:*)",
+      "Bash(bash:*)",
+      "Bash(python:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "mcp__zread__search_doc",
+      "Bash(test:*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(sed:*)"
+    ]
+  }
+}

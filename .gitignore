@@ -46,3 +46,7 @@ prisma/migrations/
 .secondme/
 .vercel
 .opencode
+
+# Claude Code config
+.claude.json
+mcp-config.json
