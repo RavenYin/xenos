@@ -51,3 +51,6 @@ prisma/migrations/
 .claude.json
 mcp-config.json
 docs/
+
+# Playwright MCP
+.playwright-mcp/

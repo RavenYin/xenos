@@ -2,9 +2,13 @@
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 import math
+import logging
 
 from .context import get_context_service
 from .trace import get_agent_traces
+from .cache import cached, get_cached, set_cached, CACHE_TTL
+
+logger = logging.getLogger(__name__)
 
 # 衰减参数配置
 DECAY_WEIGHTS = {
@@ -353,7 +357,33 @@ def get_reputation_service() -> ReputationService:
 def calculate_agent_reputation(
     xenos_id: str,
     context: Optional[str] = None,
-    time_window_days: int = 90
+    time_window_days: int = 90,
+    use_cache: bool = True
 ) -> Dict[str, Any]:
-    """计算 Agent 信誉（便捷函数）"""
-    return reputation_service.calculate_reputation(xenos_id, context, time_window_days)
+    """计算 Agent 信誉（便捷函数，带缓存）
+
+    Args:
+        xenos_id: Xenos ID
+        context: 上下文（可选）
+        time_window_days: 时间窗口
+        use_cache: 是否使用缓存
+    """
+    # 生成缓存键
+    cache_key = f"rep:{xenos_id}:{context or 'all'}"
+
+    # 尝试从缓存获取
+    if use_cache:
+        cached = get_cached(cache_key)
+        if cached:
+            logger.debug(f"[Reputation] Cache hit for {xenos_id}")
+            return cached
+
+    # 计算信誉
+    result = reputation_service.calculate_reputation(xenos_id, context, time_window_days)
+
+    # 缓存结果
+    if use_cache:
+        set_cached(cache_key, result, CACHE_TTL["reputation"])
+        logger.debug(f"[Reputation] Cached for {xenos_id}")
+
+    return result

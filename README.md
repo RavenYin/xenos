@@ -30,22 +30,10 @@ Xenos：Agent A 签发凭证 → Agent B 验证签名 → 可追溯、可验证 
 
 | 特性 | 说明 |
 |------|------|
-| 🔐 可验证承诺 | Ed25519 签名，确保承诺的真实性和不可篡改性 |
-| 📊 上下文信誉 | 按领域独立计算履约率，回答"你在什么情况下靠谱" |
-| ⚡ 零依赖链 | 无需区块链，基于传统数据库，响应速度快、无 Gas 费用 |
-| 🚀 Agent 友好 | REST API + NPM SDK + MCP，即插即用 |
-
-### 与其他方案的对比
-
-| 特性 | Xenos | 传统信誉系统 | 区块链信誉系统 |
-|------|-------|-------------|---------------|
-| 统一身份 | ✅ | ❌ | ✅ |
-| 场景化信誉 | ✅ | ❌ | ❌ |
-| 零依赖链 | ✅ | ✅ | ❌ |
-| 可验证凭证 | ✅ | ❌ | ✅ |
-| 开发友好 | ✅ | ✅ | ❌ |
-| 防刷机制 | ✅ | ❌ | 部分支持 |
-| 性能 | 高 | 高 | 低 |
+| 可验证承诺 | Ed25519 签名，确保承诺的真实性和不可篡改性 |
+| 上下文信誉 | 按领域独立计算履约率，回答"你在什么情况下靠谱" |
+| 零依赖链 | 无需区块链，基于传统数据库，响应速度快、无 Gas 费用 |
+| Agent 友好 | REST API + MCP，即插即用 |
 
 ---
 
@@ -65,7 +53,7 @@ cd xenos
 # 安装依赖
 npm install
 
-# 配置环境变量（复制 .env.local.example 并修改）
+# 配置环境变量
 cp .env.local.example .env.local
 
 # 同步数据库
@@ -91,7 +79,7 @@ npm run dev
 ### 创建承诺
 
 ```bash
-curl -X POST https://xenos-8d6c.vercel.app/api/v1/commitment \
+curl -X POST https://xenos-zeta.vercel.app/api/v1/commitment \
   -H "Content-Type: application/json" \
   -d '{
     "promiserId": "agent_alice",
@@ -121,7 +109,7 @@ curl -X POST https://xenos-8d6c.vercel.app/api/v1/commitment \
 ### 查询信誉
 
 ```bash
-curl "https://xenos-8d6c.vercel.app/api/v1/reputation?userId=agent_alice&context=development"
+curl "https://xenos-zeta.vercel.app/api/v1/reputation?userId=agent_alice&context=development"
 ```
 
 响应：
@@ -138,12 +126,6 @@ curl "https://xenos-8d6c.vercel.app/api/v1/reputation?userId=agent_alice&context
 }
 ```
 
-### 发现 Agent
-
-```bash
-curl "https://xenos-8d6c.vercel.app/api/v1/agents?context=development&minReputation=0.8&limit=10"
-```
-
 ### 完整 API 文档
 
 | 方法 | 端点 | 说明 |
@@ -158,6 +140,10 @@ curl "https://xenos-8d6c.vercel.app/api/v1/agents?context=development&minReputat
 | GET | `/agents` | 发现 Agent |
 | GET | `/delegations?userId=` | 查询委托列表 |
 | GET | `/promises?userId=` | 查询承诺列表 |
+| GET | `/user/preferences` | 获取用户偏好设置 |
+| PUT | `/user/preferences` | 更新用户偏好设置 |
+| GET | `/user/traces` | 获取用户痕迹列表 |
+| POST | `/user/traces` | 上传用户痕迹 |
 
 所有 API 响应格式：
 
@@ -201,90 +187,74 @@ curl "https://xenos-8d6c.vercel.app/api/v1/agents?context=development&minReputat
 | `get_reputation` | 查询信誉 |
 | `list_commitments` | 查询承诺列表 |
 
-### 使用示例
+---
 
-在对话中直接使用：
+## 三层数据存储架构
+
+Xenos 采用三层数据存储架构，平衡性能、可靠性和用户控制权：
 
 ```
-请帮我创建一个承诺：
-- 承诺者：agent_alice
-- 委托方：agent_bob
-- 任务：完成登录页面开发
-- 上下文：development
+┌─────────────────────────────────────────────────────────────┐
+│  第一层：用户本地存储                                          │
+│  - 偏好设置、行为痕迹                                         │
+│  - 用户完全控制，可加密存储                                     │
+│  - 支持离线访问                                               │
+├─────────────────────────────────────────────────────────────┤
+│  第二层：Xenos 服务器                                         │
+│  - Redis 缓存（热数据）                                       │
+│  - PostgreSQL（持久化存储）                                    │
+│  - 信誉数据、承诺记录、审计日志                                  │
+├─────────────────────────────────────────────────────────────┤
+│  第三层：去中心化存储（可选）                                    │
+│  - IPFS / Arweave                                            │
+│  - 长期存档、跨平台迁移                                        │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-MCP Server 会自动调用 API 并返回结果。
+### 数据同步
+
+本地存储与服务器自动同步：
+
+```typescript
+import { localStorageManager, syncAPI } from '@/lib/user-local-storage'
+
+// 初始化本地存储
+const storage = await localStorageManager.initialize(userDid)
+
+// 同步痕迹到服务器
+const { uploaded, failed } = await syncAPI.syncTraces()
+
+// 下载服务器端偏好设置
+const preferences = await syncAPI.downloadPreferences()
+```
 
 ---
 
-## NPM SDK
+## ToWow 集成
 
-```bash
-npm install @xenos/vca-sdk
-```
+Xenos 内置 ToWow 插件支持，实现任务管理与信誉系统的无缝集成。
 
-### 基础用法
+### 功能
 
-```typescript
-import { VCA } from '@xenos/vca-sdk'
+- 自动同步 ToWow 任务为 Xenos 承诺
+- 任务完成状态自动更新履约记录
+- 支持 Webhook 实时推送
 
-const vca = new VCA({
-  apiUrl: 'https://xenos-zeta.vercel.app/api/v1'
-})
+### API 端点
 
-// 创建承诺
-const commitment = await vca.createCommitment({
-  promiserId: 'agent_alice',
-  delegatorId: 'agent_bob',
-  task: '完成登录页面开发',
-  context: 'development'
-})
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/towow/tasks` | 获取 ToWow 任务列表 |
+| POST | `/api/towow/sync` | 手动同步任务 |
+| POST | `/api/towow/webhook` | 接收 ToWow 回调 |
 
-// 查询信誉
-const rep = await vca.getReputation({
-  userId: 'agent_alice',
-  context: 'development'
-})
-console.log(`履约率: ${(rep.fulfillmentRate * 100).toFixed(1)}%`)
+### ToWow 内置 Xenos 适配器
 
-// 发现 Agent
-const agents = await vca.discoverAgents({
-  context: 'development',
-  minReputation: 0.8,
-  limit: 10
-})
-```
+ToWow 项目内置了 Xenos 适配器模块，支持：
 
-### 高级用法
-
-```typescript
-// 自定义请求拦截器
-const vca = new VCA({
-  apiUrl: 'https://xenos-zeta.vercel.app/api/v1',
-  onRequest: (config) => {
-    // 添加认证 token
-    config.headers = {
-      ...config.headers,
-      'Authorization': `Bearer ${yourToken}`
-    }
-    return config
-  },
-  onResponse: (response) => {
-    // 处理响应
-    if (response.code !== 0) {
-      console.error('API 错误:', response.error)
-    }
-    return response
-  }
-})
-
-// 批量查询
-const reputations = await Promise.all([
-  vca.getReputation({ userId: 'agent_alice', context: 'development' }),
-  vca.getReputation({ userId: 'agent_bob', context: 'development' }),
-  vca.getReputation({ userId: 'agent_charlie', context: 'development' })
-])
-```
+- **用户自动注册** - 首次使用时自动注册到 Xenos
+- **事件记录** - 任务事件自动记录到 Xenos
+- **信誉查询** - 集成 Xenos 信誉查询
 
 ---
 
@@ -314,39 +284,12 @@ Xenos 使用 W3C 推荐的 did:key 标准，为每个 Agent 生成去中心化�
 import { generateDID } from './lib/did'
 
 const { did, publicKey, privateKey } = await generateDID()
-// did: key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK
-```
-
-### 可验证承诺证明 (VCA)
-
-Xenos 的核心是可验证承诺证明机制。当 Agent A 承诺完成任务时，它会签发一个数字凭证：
-
-```typescript
-import { issueCommitmentVC } from './lib/vc'
-
-const vc = await issueCommitmentVC(
-  {
-    commitmentId: 'cm123456',
-    promiserDid: 'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
-    context: 'development',
-    task: '完成登录页面开发',
-    status: 'PENDING'
-  },
-  'did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK',
-  privateKey
-)
+// did:key:z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnEGta2doK
 ```
 
 ### 防刷机制
 
-Xenos 实现了严格的防刷规则：承诺者不能自证 fulfilled=true，防止 Agent 虚假履约。
-
-```typescript
-// 防刷规则验证
-if (attesterId === commitment.promiserId && fulfilled === true) {
-  throw new Error('承诺者不能自证履约')
-}
-```
+承诺者不能自证 fulfilled=true，防止 Agent 虚假履约。
 
 ---
 
@@ -358,86 +301,45 @@ xenos/
 │   ├── app/                 # Next.js App Router
 │   │   ├── api/v1/          # 公共 VCA REST API
 │   │   ├── api/auth/        # 认证流程端点
-│   │   ├── page.tsx         # 首页
-│   │   ├── dashboard/       # 仪表板页面
-│   │   ├── agents/          # Agent 发现页面
-│   │   └── trust/           # 信任管理页面
+│   │   ├── api/towow/       # ToWow 集成端点
+│   │   └── ...              # 其他页面
 │   ├── components/          # 可复用 UI 组件
 │   └── lib/                 # 共享业务逻辑
 │       ├── auth.ts          # SecondMe OAuth 客户端
 │       ├── did.ts           # did:key 生成、签名、验证
 │       ├── vc.ts            # 可验证凭证签发和验证
 │       ├── reputation.ts    # 上下文信誉计算
-│       ├── audit.ts         # 审计日志记录
+│       ├── redis-cache.ts   # Redis 缓存层
+│       ├── user-local-storage.ts  # 本地存储管理
 │       └── towow.ts         # ToWow API 客户端
 ├── prisma/
 │   └── schema.prisma        # 数据模型定义
 ├── mcp/
 │   └── index.ts             # MCP Server
-├── tests/                   # Playwright 测试套件
-└── docs/                    # 文档
+└── tests/                   # Playwright 测试套件
 ```
 
 ---
 
 ## 开发命令
 
-### 开发
-
 ```bash
+# 开发
 npm install              # 安装依赖
-npx prisma db push      # 同步数据库（首次启动必须）
-npm run dev             # 启动开发服务器（端口 3000）
-```
+npx prisma db push       # 同步数据库
+npm run dev              # 启动开发服务器
 
-### 构建
+# 构建
+npm run build            # 构建生产版本
+npm run start            # 运行生产模式
 
-```bash
-npm run build           # 构建（包含 prisma generate）
-npm run start           # 运行生产模式
-```
+# 测试
+npm run test             # 运行所有测试
+npm run test:api         # 仅 API 测试
+npm run test:e2e         # 仅 E2E 测试
 
-### 测试
-
-```bash
-npm run test            # 运行所有 Playwright 测试
-npm run test:api        # 仅 API 测试
-npm run test:e2e        # 仅 E2E 测试
-npm run test:ui         # 打开 Playwright UI
-```
-
-### 其他
-
-```bash
-npm run lint            # ESLint 检查
-npm run mcp             # 启动 MCP Server（ts 模式）
-npx tsx mcp/index.ts   # 直接启动 MCP Server
-```
-
----
-
-## 环境变量
-
-在 `.env.local` 中配置：
-
-```env
-# 数据库
-DATABASE_URL=postgresql://...
-DIRECT_DATABASE_URL=postgresql://...
-
-# SecondMe OAuth
-SECONDME_CLIENT_ID=...
-SECONDME_CLIENT_SECRET=...
-SECONDME_REDIRECT_URI=http://localhost:3000/api/auth/callback/secondme
-
-# NextAuth
-NEXTAUTH_SECRET=...
-NEXTAUTH_URL=http://localhost:3000
-
-# ToWow 集成
-TOWOW_API_URL=https://towow.net
-TOWOW_API_KEY=...
-TOWOW_ENABLED=true
+# MCP Server
+npm run mcp              # 启动 MCP Server
 ```
 
 ---
@@ -452,6 +354,8 @@ TOWOW_ENABLED=true
 - [x] REST API
 - [x] MCP Server
 - [x] ToWow 集成
+- [x] 三层数据存储架构
+- [x] 用户偏好和痕迹 API
 
 ### Phase 2：信契网络（进行中）
 
@@ -465,38 +369,6 @@ TOWOW_ENABLED=true
 - [ ] 信誉聚合器
 - [ ] 交叉网络信任传递
 - [ ] 激励机制
-
----
-
-## 贡献指南
-
-我们欢迎任何形式的贡献：
-
-1. 提交 Issue 报告 Bug
-2. 提交 Pull Request 改进代码
-3. 撰写文档帮助他人
-4. 分享使用案例
-
-### 开发流程
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
----
-
-## 文档
-
-更多详细信息请查看：
-
-- [Xenos 协议介绍](https://github.com/RavenYin/xenos/blob/main/docs/xenos-protocol-intro.md)
-- [品牌故事](https://github.com/RavenYin/xenos/blob/main/docs/brand-story.md)
-- [核心传播话术](https://github.com/RavenYin/xenos/blob/main/docs/key-messages.md)
-- [演示脚本](https://github.com/RavenYin/xenos/blob/main/docs/demo-script.md)
-- [API 文档](https://github.com/RavenYin/xenos/blob/main/docs/api-docs.md)
-- [集成指南](https://github.com/RavenYin/xenos/blob/main/docs/integration-guide.md)
 
 ---
 
@@ -517,10 +389,6 @@ Xenos 有严格的防刷机制。承诺者不能自证履约，所有交互记�
 ### 隐私如何保护？
 
 Xenos 采用双层信息机制。基础信誉（履约率、总任务数）是公开的，但偏好痕迹（技能标签、工作习惯）由 Agent 自主决定是否开放。
-
-### Xenos 适合谁使用？
-
-AI Agent 开发者、Web3/DID 技术爱好者、Agent 网络运营商都可以使用 Xenos。
 
 ---
 

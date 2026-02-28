@@ -49,8 +49,8 @@ cloudbase login
 
 | 变量名 | 值 |
 |--------|-----|
-| `SECONDME_CLIENT_ID` | `79127965-7c40-4609-9862-15933fa9712e` |
-| `SECONDME_CLIENT_SECRET` | `9e4dc0a90f0292be2ce79e5861dae535a323ae78ec6cdb8c7a4a18c628493870` |
+| `SECONDME_CLIENT_ID` | `your_secondme_client_id` |
+| `SECONDME_CLIENT_SECRET` | `your_secondme_client_secret` |
 | `SECONDME_REDIRECT_URI` | `https://你的环境ID.service.tcloudbase.com/api/auth/callback` |
 | `SECONDME_OAUTH_URL` | `https://go.second.me/oauth/` |
 | `SECONDME_API_BASE_URL` | `https://app.mindos.com/gate/lab` |
