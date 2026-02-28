@@ -50,3 +50,4 @@ prisma/migrations/
 # Claude Code config
 .claude.json
 mcp-config.json
+docs/
