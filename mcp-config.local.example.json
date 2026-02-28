@@ -4,7 +4,7 @@
       "command": "npx",
       "args": ["tsx", "mcp/index.ts"],
       "env": {
-        "XENOS_API_URL": "https://xenos-8d6c.vercel.app"
+        "XENOS_API_URL": "https://xenos-zeta.vercel.app"
       }
     },
     "obsidian-all-vaults": {
@@ -24,6 +24,14 @@
       "args": ["-y", "@modelcontextprotocol/server-github"],
       "env": {
         "GITHUB_PERSONAL_ACCESS_TOKEN": "<YOUR_GITHUB_PAT>"
+      }
+    },
+    "wechat-publisher": {
+      "command": "npx",
+      "args": ["-y", "@iflow-mcp/wechat-publisher-mcp"],
+      "env": {
+        "WECHAT_APP_ID": "<YOUR_WECHAT_APP_ID>",
+        "WECHAT_APP_SECRET": "<YOUR_WECHAT_APP_SECRET>"
       }
     }
   }

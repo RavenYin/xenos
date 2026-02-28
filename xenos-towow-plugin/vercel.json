@@ -11,10 +11,5 @@
       "src": "/(.*)",
       "dest": "backend/app/main.py"
     }
-  ],
-  "env": {
-    "XENOS_API_BASE": "@xenos-api-base",
-    "TOWOW_API_BASE": "@towow-api-base",
-    "WEBHOOK_SECRET": "@webhook-secret"
-  }
+  ]
 }
