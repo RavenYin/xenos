@@ -36,7 +36,8 @@
       "Bash(test:*)",
       "Bash(npm run:*)",
       "Bash(git add:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(gh search:*)"
     ]
   }
 }
