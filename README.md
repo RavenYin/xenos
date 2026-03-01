@@ -54,7 +54,8 @@ cd xenos
 npm install
 
 # 配置环境变量
-cp .env.local.example .env.local
+# 创建 .env.local 文件并参考 CLAUDE.md 配置以下变量
+# DATABASE_URL, SECONDME_CLIENT_ID, SECONDME_CLIENT_SECRET 等
 
 # 同步数据库
 npx prisma db push
@@ -230,6 +231,47 @@ const preferences = await syncAPI.downloadPreferences()
 
 ---
 
+## SecondMe 集成
+
+Xenos 使用 SecondMe 作为 OAuth 2.0 认证提供商，并集成了用户数据 API。
+
+### 认证流程
+
+```
+用户登录 → SecondMe 授权 → 回调 code → 换取 token → 获取用户信息 → 创建 session
+```
+
+### 环境变量
+
+```bash
+SECONDME_API_BASE_URL=https://app.mindos.com/gate/lab
+SECONDME_OAUTH_URL=https://go.second.me/oauth/
+SECONDME_CLIENT_ID=your_client_id
+SECONDME_CLIENT_SECRET=your_client_secret
+SECONDME_REDIRECT_URI=http://localhost:3000/api/auth/callback
+```
+
+### API 端点
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/auth/login` | GET | 重定向到 SecondMe 授权页面 |
+| `/api/auth/callback` | GET | OAuth 回调处理 |
+| `/api/auth/logout` | POST | 登出，清除 session |
+
+### SecondMe API 集成
+
+通过 `src/lib/secondme.ts` 提供的客户端，可以访问以下功能：
+
+| 功能 | 说明 |
+|------|------|
+| 用户兴趣标签 (Shades) | 获取用户的兴趣偏好 |
+| 用户软记忆 | 获取用户的软记忆数据 |
+| 添加笔记 | 持久化用户笔记 |
+| 聊天流 | 与 SecondMe AI 对话 |
+
+---
+
 ## ToWow 集成
 
 Xenos 内置 ToWow 插件支持，实现任务管理与信誉系统的无缝集成。
@@ -305,11 +347,12 @@ xenos/
 │   │   └── ...              # 其他页面
 │   ├── components/          # 可复用 UI 组件
 │   └── lib/                 # 共享业务逻辑
-│       ├── auth.ts          # SecondMe OAuth 客户端
+│       ├── auth.ts          # SecondMe OAuth 客户端（token 管理、自动刷新）
+│       ├── secondme.ts      # SecondMe API 客户端（用户数据、笔记、聊天）
 │       ├── did.ts           # did:key 生成、签名、验证
 │       ├── vc.ts            # 可验证凭证签发和验证
 │       ├── reputation.ts    # 上下文信誉计算
-│       ├── redis-cache.ts   # Redis 缓存层
+│       ├── cache.ts         # Redis 缓存封装
 │       ├── user-local-storage.ts  # 本地存储管理
 │       └── towow.ts         # ToWow API 客户端
 ├── prisma/

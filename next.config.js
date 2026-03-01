@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // CloudBase 部署配置
-  output: 'standalone',
+  // 注意：Vercel 部署时不需要 output: 'standalone'
+  // Docker 部署时可以取消下面这行的注释
+  // output: 'standalone',
   // 创建独立的可部署包
   trailingSlash: false,
   // 静态导出配置（如果需要全静态）

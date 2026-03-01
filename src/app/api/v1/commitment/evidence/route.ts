@@ -4,21 +4,19 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 /**
-
  * Agent 履约证明提交 API
- * 
+ *
  * POST /api/v1/commitment/evidence
  * Agent 通过此接口提交履约证明
  */
 
-
 /**
  * 提交履约证明
- * 
+ *
  * Body:
  * {
  *   "commitmentId": "xxx",
- *   "promiserId": "agent_001",
+ *   "promiserId": "agent_001",  // 可选，如果不提供则从 session 获取
  *   "evidence": {
  *     "type": "link" | "text" | "image" | "github_pr",
  *     "content": "https://github.com/xxx/pull/1",
@@ -29,13 +27,30 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { commitmentId, promiserId, evidence } = body
+    const { commitmentId, promiserId: bodyPromiserId, evidence } = body
 
-    if (!commitmentId || !promiserId) {
+    if (!commitmentId) {
       return NextResponse.json(
-        { code: 400, error: 'Missing commitmentId or promiserId' },
+        { code: 400, error: 'Missing commitmentId' },
         { status: 400 }
       )
+    }
+
+    // 从 session 获取用户 ID（如果未提供 promiserId）
+    let promiserId = bodyPromiserId
+    if (!promiserId) {
+      const userId = request.cookies.get('session_user_id')?.value
+      if (!userId) {
+        return NextResponse.json({ code: 401, error: '未登录' }, { status: 401 })
+      }
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { secondmeUserId: true },
+      })
+      if (!user) {
+        return NextResponse.json({ code: 404, error: '用户不存在' }, { status: 404 })
+      }
+      promiserId = user.secondmeUserId
     }
 
     // 查找承诺
@@ -76,8 +91,8 @@ export async function POST(request: NextRequest) {
     }
 
     // 构建证据内容
-    const evidenceContent = typeof evidence === 'string' 
-      ? evidence 
+    const evidenceContent = typeof evidence === 'string'
+      ? evidence
       : JSON.stringify(evidence)
 
     // 更新承诺

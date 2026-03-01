@@ -21,11 +21,13 @@ Xenos 是一个基于可验证承诺证明 (VCA) 的 Agent 信任协议平台，
 - `src/components/` - 可复用 UI 组件（PascalCase 命名）
 - `src/lib/` - 共享业务逻辑
   - `auth.ts` - SecondMe OAuth 客户端（token 管理、自动刷新）
+  - `secondme.ts` - SecondMe API 客户端（用户数据、笔记、聊天）
   - `did.ts` - did:key 生成、签名、验证（Ed25519）
   - `vc.ts` - 可验证凭证签发和验证
   - `reputation.ts` - 上下文信誉计算
   - `audit.ts` - 审计日志记录
   - `towow.ts` - ToWow API 客户端
+  - `cache.ts` - Redis 缓存封装
   - `prisma.ts` - 数据库单例
 - `prisma/schema.prisma` - 数据模型定义（修改后需 `npx prisma generate`）
 - `mcp/` - MCP Server，让 AI Agent 通过协议调用 Xenos
@@ -53,17 +55,26 @@ Xenos 是一个基于可验证承诺证明 (VCA) 的 Agent 信任协议平台，
 
 ### 环境变量
 在 `.env.local` 中配置：
-```
+```bash
+# 数据库
 DATABASE_URL=postgresql://...
 DIRECT_DATABASE_URL=postgresql://...
-SECONDME_CLIENT_ID=...
-SECONDME_CLIENT_SECRET=...
-SECONDME_REDIRECT_URI=http://localhost:3000/api/auth/callback/secondme
-NEXTAUTH_SECRET=...
+
+# SecondMe OAuth
+SECONDME_API_BASE_URL=https://app.mindos.com/gate/lab
+SECONDME_OAUTH_URL=https://go.second.me/oauth/
+SECONDME_CLIENT_ID=your_client_id
+SECONDME_CLIENT_SECRET=your_client_secret
+SECONDME_REDIRECT_URI=http://localhost:3000/api/auth/callback
+
+# Next.js
+NEXTAUTH_SECRET=your_secret_here
 NEXTAUTH_URL=http://localhost:3000
+
+# ToWow 集成
 TOWOW_API_URL=https://towow.net
-TOWOW_API_KEY=...
-TOWOW_ENABLED=true/false
+TOWOW_API_KEY=your_api_key
+TOWOW_ENABLED=true
 ```
 
 ---
@@ -120,27 +131,109 @@ npx tsx mcp/index.ts   # 直接启动 MCP Server
 
 ---
 
-## SecondMe OAuth 配置
+## SecondMe 集成
+
+SecondMe 是 Xenos 的 OAuth 认证提供商，同时提供用户数据 API 集成。
+
+### 架构概览
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  SecondMe OAuth 流程                                        │
+├─────────────────────────────────────────────────────────────┤
+│  用户登录 → /api/auth/login → SecondMe 授权页面            │
+│                      ↓                                   │
+│  用户授权 → /api/auth/callback?code=xxx → 换取 Token       │
+│                      ↓                                   │
+│  获取用户信息 → 创建/更新 User 记录 → 生成 Session Cookie  │
+│                      ↓                                   │
+│  Dashboard 访问 → 验证 session_user_id                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 目录结构
+
+```
+src/
+├── lib/
+│   ├── auth.ts           # SecondMe OAuth 客户端（token 交换、自动刷新）
+│   └── secondme.ts      # SecondMe API 客户端（用户数据、笔记、聊天）
+└── app/api/auth/
+    ├── login/route.ts    # 登录入口，重定向到授权页面
+    ├── callback/route.ts # OAuth 回调处理
+    └── logout/route.ts  # 登出，清除 session cookie
+```
+
+### 环境变量
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `SECONDME_API_BASE_URL` | API 基础 URL | `https://app.mindos.com/gate/lab` |
+| `SECONDME_OAUTH_URL` | OAuth 授权 URL | `https://go.second.me/oauth/` |
+| `SECONDME_CLIENT_ID` | 客户端 ID | - |
+| `SECONDME_CLIENT_SECRET` | 客户端密钥 | - |
+| `SECONDME_REDIRECT_URI` | 回调 URI | `http://localhost:3000/api/auth/callback` |
+
+### OAuth Scopes
+
+| Scope | 说明 | 用途 |
+|-------|------|------|
+| `user.info` | 用户基础信息 | 登录认证 |
+| `user.info.shades` | 用户兴趣标签 | 用户画像 |
+| `user.info.softmemory` | 用户软记忆 | 用户画像 |
+| `note.add` | 添加笔记 | 持久化功能 |
+| `chat` | 聊天功能 | 对话集成 |
+
+### 数据模型（User 表）
+
+```prisma
+model User {
+  id                String    @id @default(cuid())
+  did               String?   @unique  // did:key 去中心化身份
+  secondmeUserId    String    @unique  // SecondMe 用户 ID
+  email             String?
+  name              String?
+  avatarUrl         String?
+  accessToken       String
+  refreshToken      String
+  tokenExpiresAt    DateTime
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+```
 
 ### API 端点
-- API 基础 URL: `https://app.mindos.com/gate/lab`
-- OAuth 授权 URL: `https://go.second.me/oauth/`
 
-### Scopes
-| Scope | 说明 |
-|-------|------|
-| `user.info` | 用户基础信息 |
-| `user.info.shades` | 用户兴趣标签 |
-| `user.info.softmemory` | 用户软记忆 |
-| `note.add` | 添加笔记 |
-| `chat` | 聊天功能 |
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/api/auth/login` | GET | 重定向到 SecondMe 授权页面 |
+| `/api/auth/callback` | GET | OAuth 回调，处理 code 换 token |
+| `/api/auth/logout` | POST | 登出，清除 session cookie |
 
-### OAuth 流程
-1. 用户点击登录 → 跳转 SecondMe 授权页面
-2. 用户授权 → 重定向回应用（带 authorization_code）
-3. 后端用 code 换取 access_token 和 refresh_token
-4. 使用 access_token 调用 SecondMe API
-5. token 过期时自动刷新
+### Session 管理
+
+- 使用 `session_user_id` cookie 存储用户 ID
+- Cookie 配置：`httpOnly=true`，`sameSite=lax`，有效期 7 天
+- 登出时删除 cookie
+
+### SecondMe API 客户端 (`secondme.ts`)
+
+| 函数 | 说明 |
+|------|------|
+| `getUserShades()` | 获取用户兴趣标签 |
+| `getUserSoftMemory()` | 获取用户软记忆 |
+| `addNote()` | 添加笔记 |
+| `createChatStream()` | 创建聊天流 |
+| `getChatSessions()` | 获取聊天会话列表 |
+
+### 安全注意事项
+
+**当前实现存在的限制（待改进）：**
+
+1. **state 参数未验证** - 存在 CSRF 攻击风险，建议在生产环境添加 state 验证
+2. **session cookie 无签名** - 建议使用加密签名机制
+3. **token 刷新未实际调用** - `getValidAccessToken()` 函数已实现但未被调用
+4. **无统一的认证中间件** - 需要在各路由中手动检查 cookie
 
 ---
 

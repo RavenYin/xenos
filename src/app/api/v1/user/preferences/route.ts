@@ -5,22 +5,24 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { unifiedCache, CacheKeys, CacheTTL } from '@/lib/redis-cache'
+
+// 从 cookie 获取当前用户 ID
+function getUserIdFromRequest(request: NextRequest): string | null {
+  return request.cookies.get('session_user_id')?.value || null
+}
 
 // GET - 获取用户偏好设置
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session?.user?.id) {
+    const userId = getUserIdFromRequest(request)
+    if (!userId) {
       return NextResponse.json(
         { code: 401, error: '未授权' },
         { status: 401 }
       )
     }
-
-    const userId = session.user.id
     const cacheKey = CacheKeys.agentProfile(userId)
 
     // 尝试从缓存获取
@@ -29,14 +31,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ code: 0, data: cached })
     }
 
-    // 从数据库获取用户偏好
+    // 从数据库获取用户信息
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         did: true,
         name: true,
-        profileText: true,
         createdAt: true,
       },
     })
@@ -91,15 +92,13 @@ export async function GET(request: NextRequest) {
 // PUT - 更新用户偏好设置
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session?.user?.id) {
+    const userId = getUserIdFromRequest(request)
+    if (!userId) {
       return NextResponse.json(
         { code: 401, error: '未授权' },
         { status: 401 }
       )
     }
-
-    const userId = session.user.id
     const body = await request.json()
 
     // 验证输入
@@ -111,27 +110,23 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // 更新用户资料（存储在 profileText 中作为 JSON）
-    // 注意：实际生产环境应该有独立的 preferences 表
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        profileText: JSON.stringify(preferences),
-        updatedAt: new Date(),
-      },
-    })
+    // 注意：当前实现仅返回成功响应
+    // 实际生产环境建议添加独立的 preferences 表来持久化存储
+    // 这里暂时不更新数据库，仅更新缓存
 
-    // 清除缓存
     const cacheKey = CacheKeys.agentProfile(userId)
-    await unifiedCache.delete(cacheKey)
+
+    // 更新缓存
+    const result = {
+      userId,
+      preferences,
+      updatedAt: new Date().toISOString(),
+    }
+    await unifiedCache.set(cacheKey, result, CacheTTL.USER_DATA)
 
     return NextResponse.json({
       code: 0,
-      data: {
-        userId,
-        preferences,
-        updatedAt: updatedUser.updatedAt.toISOString(),
-      },
+      data: result,
     })
   } catch (error) {
     console.error('[API] Update preferences error:', error)

@@ -5,15 +5,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { unifiedCache, CacheKeys, CacheTTL } from '@/lib/redis-cache'
 
+// 从 cookie 获取当前用户 ID
+function getUserIdFromRequest(request: NextRequest): string | null {
+  return request.cookies.get('session_user_id')?.value || null
+}
+
 // 痕迹类型定义
 interface TraceInput {
-  userId: string
   action: string
-  context: string
   result: 'success' | 'failed' | 'pending'
   metadata?: Record<string, any>
   timestamp?: string
@@ -22,21 +24,19 @@ interface TraceInput {
 // GET - 获取用户痕迹列表
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session?.user?.id) {
+    const userId = getUserIdFromRequest(request)
+    if (!userId) {
       return NextResponse.json(
         { code: 401, error: '未授权' },
         { status: 401 }
       )
     }
-
-    const userId = session.user.id
     const { searchParams } = new URL(request.url)
-    const context = searchParams.get('context')
+    const action = searchParams.get('action')
     const limit = parseInt(searchParams.get('limit') || '50')
 
     // 构建缓存键
-    const cacheKey = CacheKeys.traceList(userId, context || undefined)
+    const cacheKey = CacheKeys.traceList(userId, action || undefined)
 
     // 尝试从缓存获取
     const cached = await unifiedCache.get(cacheKey)
@@ -44,26 +44,38 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ code: 0, data: cached })
     }
 
-    // 从数据库查询痕迹
-    // 使用 AuditLog 作为痕迹存储
-    const traces = await prisma.auditLog.findMany({
+    // 从数据库查询审计日志作为痕迹记录
+    const logs = await prisma.auditLog.findMany({
       where: {
-        userId,
-        ...(context && { action: { contains: context } }),
+        actorId: userId,
+        ...(action && { action: { contains: action } }),
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { timestamp: 'desc' },
       take: limit,
     })
 
+    // 解析 payload JSON
+    const traces = logs.map(log => {
+      let payload: any = {}
+      try {
+        payload = log.payload ? JSON.parse(log.payload) : {}
+      } catch {
+        payload = {}
+      }
+
+      return {
+        id: log.id,
+        action: log.action,
+        result: payload.result || 'success',
+        timestamp: log.timestamp.toISOString(),
+        metadata: payload,
+        targetType: log.targetType,
+        targetId: log.targetId,
+      }
+    })
+
     const result = {
-      traces: traces.map(t => ({
-        id: t.id,
-        action: t.action,
-        context: t.resource || 'unknown',
-        result: t.details?.result || 'success',
-        timestamp: t.createdAt.toISOString(),
-        metadata: t.details,
-      })),
+      traces,
       total: traces.length,
       hasMore: traces.length === limit,
     }
@@ -84,36 +96,37 @@ export async function GET(request: NextRequest) {
 // POST - 上传新痕迹
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession()
-    if (!session?.user?.id) {
+    const userId = getUserIdFromRequest(request)
+    if (!userId) {
       return NextResponse.json(
         { code: 401, error: '未授权' },
         { status: 401 }
       )
     }
-
-    const userId = session.user.id
     const body: TraceInput = await request.json()
 
     // 验证输入
-    if (!body.action || !body.context) {
+    if (!body.action) {
       return NextResponse.json(
-        { code: 400, error: '缺少必要字段' },
+        { code: 400, error: '缺少必要字段 action' },
         { status: 400 }
       )
     }
 
     // 记录到审计日志
-    const trace = await prisma.auditLog.create({
+    const payload = {
+      result: body.result || 'success',
+      metadata: body.metadata,
+      clientTimestamp: body.timestamp,
+    }
+
+    const log = await prisma.auditLog.create({
       data: {
-        userId,
+        actorId: userId,
         action: body.action,
-        resource: body.context,
-        details: {
-          result: body.result,
-          metadata: body.metadata,
-          clientTimestamp: body.timestamp,
-        },
+        targetType: 'trace',
+        targetId: userId,
+        payload: JSON.stringify(payload),
       },
     })
 
@@ -124,9 +137,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       code: 0,
       data: {
-        traceId: trace.id,
+        traceId: log.id,
         recorded: true,
-        timestamp: trace.createdAt.toISOString(),
+        timestamp: log.timestamp.toISOString(),
       },
     })
   } catch (error) {

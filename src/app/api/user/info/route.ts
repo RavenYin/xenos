@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         code: 0,
         data: {
-          ...userInfo,
           ...dbUser,
+          ...userInfo,
         },
       })
     } catch (authError) {
